@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const db = require('./config/db');
 const routes = require('./routes');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 
 // Load env variables
 dotenv.config();
@@ -18,6 +19,8 @@ app.use(cors(
 app.use(express.json({ limit: '50mb' }));
 // Body parser
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// Cookie parser // để lấy cookie từ req mà không cần phải truyền vào từ header hoặc body
+app.use(cookieParser());
 // Port
 const Port = process.env.PORT || 5000;
 
@@ -25,7 +28,7 @@ const Port = process.env.PORT || 5000;
 db.connect();
 
 // Routes
-// routes(app);
+routes(app);
 
 app.listen(Port, () => {
     console.log('Server is running on port ' + Port);
