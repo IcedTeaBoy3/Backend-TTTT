@@ -5,10 +5,12 @@ class AuthController {
     registerUser = async (req, res) => {
         try {
             const { name, email, password, phone, confirmPassword } = req.body;
+            const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
             const emailRegex = /\S+@\S+\.\S+/;
             const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
             const validPassword = passwordRegex.test(password);
             const validEmail = emailRegex.test(email);
+            const validPhone = phoneRegex.test(phone);
             if ( !email || !password || !confirmPassword) {
                 return res.status(400).json({
                     status: 'error', 
@@ -20,7 +22,13 @@ class AuthController {
                     status: 'error', 
                     message: 'Email không đúng định dạng' 
                 });
-            }else if(!validPassword){
+            } else if(!validPhone){
+                return res.status(400).json({
+                    status: 'error', 
+                    message: 'Số điện thoại không đúng định dạng' 
+                });
+            }
+            else if(!validPassword){
                 return res.status(400).json({
                     status: 'error',
                     message: 'Mật khẩu có ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt'
