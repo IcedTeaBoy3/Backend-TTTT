@@ -1,4 +1,5 @@
-const JwtService = require('../services/JWTService');
+
+const JwtService = require('../services/JwtService');
 
 const Authenticate = async (req, res, next) => {
     try {
@@ -15,10 +16,11 @@ const Authenticate = async (req, res, next) => {
             return res.status(403).json({
                 status: 'error',
                 message: 'Token không hợp lệ'
-            });
+            }); 
         }
         req.user = decoded;
         next();
+        
     } catch (error) {
         return res.status(500).json({
             status: 'error',

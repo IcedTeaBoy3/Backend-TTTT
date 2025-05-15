@@ -2,11 +2,11 @@ const jwt = require('jsonwebtoken');
 
 class JwtService {
     generateAccessToken(payload) {
-        return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '20m' });
+        return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '10s' });
     }
 
     generateRefreshToken(payload) {
-        return jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '365d' });
+        return jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
     }
     verifyToken(token, secret) {
         return new Promise((resolve, reject) => {
@@ -20,33 +20,32 @@ class JwtService {
         });
     }
 
-    async refreshTokenService(refresh_token)  {
-        
+
+    async refreshTokenService(refresh_token) {
         try {
-            const decoded  = await this.verifyToken(refresh_token, process.env.REFRESH_TOKEN_SECRET);
+            const decoded = await this.verifyToken(refresh_token, process.env.REFRESH_TOKEN_SECRET);
             if (!decoded) {
                 return {
                     status: 'error',
                     message: 'Token không hợp lệ'
                 };
             }
-            const access_token = this.generateAccessToken({
+            const newAccessToken = this.generateAccessToken({ 
                 id: decoded.id,
-                role: decoded.role
+                role: decoded.role,
             });
-
             return {
                 status: 'success',
-                message: 'Đã làm mới token',
-                access_token
+                message: 'Cấp lại token thành công',
+                access_token: newAccessToken
             };
+
         } catch (e) {
-            return  {
+            return {
                 status: 'error',
                 message: e.message
             };
         }
-        
     }
 }
 module.exports = new JwtService();

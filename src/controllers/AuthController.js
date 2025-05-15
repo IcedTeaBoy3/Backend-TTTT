@@ -10,7 +10,6 @@ class AuthController {
             const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
             const validPassword = passwordRegex.test(password);
             const validEmail = emailRegex.test(email);
-            const validPhone = phoneRegex.test(phone);
             if ( !email || !password || !confirmPassword) {
                 return res.status(400).json({
                     status: 'error', 
@@ -22,12 +21,7 @@ class AuthController {
                     status: 'error', 
                     message: 'Email không đúng định dạng' 
                 });
-            } else if(!validPhone){
-                return res.status(400).json({
-                    status: 'error', 
-                    message: 'Số điện thoại không đúng định dạng' 
-                });
-            }
+            } 
             else if(!validPassword){
                 return res.status(400).json({
                     status: 'error',
@@ -68,9 +62,9 @@ class AuthController {
             const { refresh_token, ...newData } = data;
             res.cookie('refresh_token', refresh_token, {
                 httpOnly: true, // Chỉ cho phép truy cập cookie từ server, Ngăn frontend JavaScript truy cập cookie (bảo vệ khỏi XSS).
-                secure: false, // Chỉ gửi cookie khi có https, Cho phép gửi cookie qua HTTP (chỉ dùng khi dev localhost). Trong production phải là true.
-                sameSite: 'None', // Chỉ gửi cookie nếu frontend và backend cùng domain và không có request cross-site. Giúp chống CSRF.
-                maxAge: 365 * 24 * 60 * 60 * 1000 // 1 year
+                secure: process.env.IS_PRODUCTION ? true : false, // Chỉ gửi cookie khi có https, Cho phép gửi cookie qua HTTP (chỉ dùng khi dev localhost). Trong production phải là true.
+                sameSite: process.env.IS_PRODUCTION ? 'None' : 'Lax', // Chỉ gửi cookie nếu frontend và backend cùng domain và không có request cross-site. Giúp chống CSRF.
+                maxAge: 7 * 24 * 60 * 60 * 1000  // 7 ngày
             });
             res.json(newData);
         } catch (error) {

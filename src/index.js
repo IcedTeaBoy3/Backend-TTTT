@@ -11,7 +11,7 @@ dotenv.config();
 // Cors
 app.use(cors(
     {
-        origin: [process.env.CLIENT_URL, 'http://localhost:3001'], // Thêm localhost vào danh sách cho phép, // Địa chỉ frontend
+        origin: [process.env.CLIENT_URL, 'http://localhost:4000'], // Thêm localhost vào danh sách cho phép, // Địa chỉ frontend
         credentials: true,
     }
 ));
@@ -23,6 +23,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 // Port
 const Port = process.env.PORT || 5000;
+
 
 // Connect to MongoDB
 db.connect();

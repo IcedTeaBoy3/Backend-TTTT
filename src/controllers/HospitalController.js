@@ -45,7 +45,7 @@ class HospitalController {
             });
         }
     }
-    getAllHospital = async (req, res) => {
+    getAllHospitals = async (req, res) => {
         try {
             const data = await HospitalService.getAllHospitals();
             res.json(data);
