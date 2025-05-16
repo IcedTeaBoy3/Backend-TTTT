@@ -7,6 +7,7 @@ const UserSchema = new Schema(
     password: { type: String, maxLength: 255,required: true },
     phone: { type: String },
     avatar: { type: String },
+    address: { type: String },
     role: { type: String, enum: ['admin', 'patient', 'doctor'], default: 'patient' },
   },
   {

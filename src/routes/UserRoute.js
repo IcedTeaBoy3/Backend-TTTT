@@ -6,5 +6,5 @@ router.get("/get-all-users",Authenticate,Authorize(["admin"]), UserController.ge
 router.get("/get-user/:id",Authenticate, UserController.getUser);
 router.put("/update-user/:id",Authenticate, UserController.updateUser);
 router.delete("/delete-user/:id",Authenticate, Authorize(["admin"]), UserController.deleteUser);
-router.delete("/delete-all-users",Authenticate, Authorize(["admin"]), UserController.deleteManyUsers);
+router.post("/delete-all-users",Authenticate, Authorize(["admin"]), UserController.deleteManyUsers);
 module.exports = router;

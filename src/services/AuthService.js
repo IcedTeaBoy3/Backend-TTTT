@@ -42,6 +42,7 @@ class AuthService {
                     message: 'Email không tồn tại',
                 };
             }
+            
             const comparePassword = await bcrypt.compare(password, user.password);
             if (!comparePassword) {
                 return {

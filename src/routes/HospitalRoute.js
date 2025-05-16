@@ -7,6 +7,6 @@ router.get('/get-hospital/:id', HospitalController.getHospital);
 router.get('/get-all-hospitals', HospitalController.getAllHospitals);
 router.put('/update-hospital/:id',Authenticate, Authorize(["admin"]), HospitalController.updateHospital);
 router.delete('/delete-hospital/:id',Authenticate, Authorize(["admin"]), HospitalController.deleteHospital);
-router.delete('/delete-all-hospitals',Authenticate, Authorize(["admin"]), HospitalController.deleteManyHospitals);
+router.post('/delete-all-hospitals',Authenticate, Authorize(["admin"]), HospitalController.deleteManyHospitals);
 
 module.exports = router;

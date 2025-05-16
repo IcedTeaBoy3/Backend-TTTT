@@ -90,7 +90,7 @@ class UserController {
     }
     deleteManyUsers = async (req, res) => {
         try {
-            const userIds = req.body.userIds;
+            const userIds = req.body.ids;
             if (!userIds || userIds.length === 0) {
                 return res.status(400).json({
                     status: 'error',

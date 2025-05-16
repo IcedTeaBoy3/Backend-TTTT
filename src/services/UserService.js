@@ -62,17 +62,24 @@ class UserService {
     }
     deleteUser = async (userId) => {
         try {
-            const user = await User.findByIdAndDelete(userId);
+            const user = await User.findOne({ _id: userId });
             if (!user) {
                 return {
                     status: 'error',
                     message: 'Người dùng không tồn tại'
                 };
             }
+            if(user.role === 'admin') {
+                return {
+                    status: 'error',
+                    message: 'Không thể xóa người dùng có quyền admin'
+                };
+            }
+            const deletedUser = await User.DeleteOne({ _id: userId });
             return {
                 status: 'success',
                 message: 'Xóa người dùng thành công',
-                data: user
+                data: deletedUser
             };
         } catch (error) {
             return {
