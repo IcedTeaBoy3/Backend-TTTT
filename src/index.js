@@ -4,10 +4,13 @@ const dotenv = require('dotenv');
 const db = require('./config/db');
 const routes = require('./routes');
 const cors = require('cors');
+const path = require('path');
 const cookieParser = require('cookie-parser');
 
 // Load env variables
 dotenv.config();
+// Cho phép truy cập file tĩnh từ public/
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 // Cors
 app.use(cors(
     {
