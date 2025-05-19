@@ -45,13 +45,18 @@ class SpecialtyService {
             };
         }
     };
-    getAllSpecialties = async () => {
+    getAllSpecialties = async (data) => {
         try {
-            const specialties = await Specialty.find();
+            const { pageNumber, limitNumber } = data;
+            const skip = (pageNumber - 1) * limitNumber;
+            // Đếm tổng bản ghi
+            const total = await Specialty.countDocuments();
+            const specialties = await Specialty.find().skip(skip).limit(limitNumber).exec();;
             return {
                 status: 'success',
                 message: 'Lấy danh sách chuyên khoa thành công',
                 data: specialties,
+                total: total,
             };
         } catch (error) {
             return {
@@ -71,27 +76,24 @@ class SpecialtyService {
                     message: 'Chuyên khoa không tồn tại',
                 };
             }
-            if(image){
+            if(image && specialty.image){
                 const oldImagePath = path.join(__dirname, '../../public', specialty?.image);
-                fs.unlink(oldImagePath, (err) => {
-                    if (err) {
-                        console.error('Lỗi khi xóa ảnh:', err);
-                    }
-                });
-                // Cập nhật thông tin chuyên khoa
-                await Specialty.findByIdAndUpdate(id, {
-                    image: image,
-                },{new: true});
+                try {
+                    await fs.unlink(oldImagePath);
+                    console.log('Old image deleted successfully');
+                } catch (err) {
+                    console.error('Error deleting old image:', err.message);
+                }
             }
-            const newSpecialty = await Specialty.findByIdAndUpdate(id, {
-                name: name,
-                description: description,
-            }, { new: true });
-            
+            const updateData= { name, description };
+            if (image) {
+                updateData.image = image;
+            }
+            const updatedSpecialty = await Specialty.findByIdAndUpdate(id, updateData, { new: true });
             return {
                 status: 'success',
                 message: 'Cập nhật chuyên khoa thành công',
-                data: newSpecialty,
+                data: updatedSpecialty,
             };
         } catch (error) {
             return {
@@ -110,14 +112,15 @@ class SpecialtyService {
                 };
             }
             // Xóa file ảnh
-            if (specialty.image) {
-                const filePath = path.join(__dirname, '../../public', specialty.image);
-                fs.unlink(filePath, (err) => {
+            if (specialty.image && specialty) {
+                const oldImagePath = path.join(__dirname, '../../public', specialty.image);
+                fs.unlink(oldImagePath, (err) => {
                     if (err) {
                         console.error('Lỗi khi xóa ảnh:', err);
                     }
                 });
             }
+            
             // Xóa chuyên khoa
             await Specialty.findByIdAndDelete(id);
             return {

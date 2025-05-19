@@ -56,7 +56,10 @@ class SpecialtyController {
 
     getAllSpecialties = async (req, res) => {
         try {
-            const data = await SpecialtyService.getAllSpecialties();
+            const { page, limit } = req.query;
+            const pageNumber = parseInt(page) || 1;
+            const limitNumber = parseInt(limit) || 10;
+            const data = await SpecialtyService.getAllSpecialties({pageNumber,limitNumber});
             res.json(data);
         } catch (error) {
             res.status(500).json({

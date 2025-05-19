@@ -3,7 +3,8 @@ const HospitalService = require('../services/HospitalService');
 class HospitalController {
     createHospital = async (req, res) => {
         try {
-            const { name, address, phone, description, image } = req.body;
+            const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+            const { name, address, phone, description} = req.body;
             const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
             const phoneValid = phoneRegex.test(phone);
             if (!phoneValid) {
@@ -18,7 +19,13 @@ class HospitalController {
                     message: 'Vui lòng điền đầy đủ thông tin bệnh viện'
                 });
             }
-            const data = await HospitalService.createHospital(req.body);
+            const data = await HospitalService.createHospital({
+                name,
+                address,
+                phone,
+                description,
+                image: imagePath
+            });
             res.json(data);
         } catch (error) {
             res.status(500).json({
@@ -47,7 +54,10 @@ class HospitalController {
     }
     getAllHospitals = async (req, res) => {
         try {
-            const data = await HospitalService.getAllHospitals();
+            const { page, limit } = req.query;
+            const pageNumber = parseInt(page) || 1;
+            const limitNumber = parseInt(limit) || 10;
+            const data = await HospitalService.getAllHospitals({pageNumber, limitNumber});
             res.json(data);
         } catch (error) {
             res.status(500).json({
@@ -59,7 +69,8 @@ class HospitalController {
     updateHospital = async (req, res) => {
         try {
             const id = req.params.id;
-            const { name, address, phone, description, image } = req.body;
+            const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+            const { name, address, phone, description} = req.body;
             const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
             const phoneValid = phoneRegex.test(phone);
             if (!id) {
@@ -79,7 +90,13 @@ class HospitalController {
                     message: 'Số điện thoại không đúng định dạng'
                 });
             }
-            const data = await HospitalService.updateHospital(id, req.body);
+            const data = await HospitalService.updateHospital(id,{
+                name,
+                address,
+                phone,
+                description,
+                image: imagePath
+            });
             res.json(data);
         } catch (error) {
             res.status(500).json({

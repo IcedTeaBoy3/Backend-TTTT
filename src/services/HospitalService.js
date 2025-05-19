@@ -1,5 +1,6 @@
 const Hospital = require('../models/Hospital');
-
+const fs = require('fs');
+const path = require('path');
 class HospitalService {
     createHospital = async (data) => {
         try {
@@ -45,13 +46,18 @@ class HospitalService {
             }
         }
     }
-    getAllHospitals = async () => {
+    getAllHospitals = async (data) => {
         try {
-            const hospitals = await Hospital.find();
+            const { pageNumber, limitNumber } = data;
+            const skip = (pageNumber - 1) * limitNumber;
+            // Đếm tổng bản ghi
+            const total = await Hospital.countDocuments();
+            const hospitals = await Hospital.find().skip(skip).limit(limitNumber).exec();
             return {
                 status: 'success',
                 message: 'Lấy danh sách bệnh viện thành công',
-                data: hospitals
+                data: hospitals,
+                total: total
             };
         } catch (error) {
             return {
@@ -63,23 +69,31 @@ class HospitalService {
     updateHospital = async (id, data) => {
         try {
             const { name, address, phone, description, image } = data;
-            const hospital = await Hospital.findByIdAndUpdate(id, {
-                name,
-                address,
-                phone,
-                description,
-                image
-            }, { new: true });
+            const hospital = await Hospital.findById(id);
             if (!hospital) {
                 return {
                     status: 'error',
                     message: 'Bệnh viện không tồn tại'
                 }
             }
+            if(image && hospital.image){
+                const oldImagePath = path.join(__dirname, '../../public', hospital.image);
+                try {
+                    await fs.unlink(oldImagePath);
+                    console.log('Old image deleted successfully');
+                } catch (err) {
+                    console.error('Error deleting old image:', err.message);
+                }
+            }
+             const updateData = { name, address, phone, description };
+            if (image) {
+                updateData.image = image;
+            }
+            const updatedHospital = await Hospital.findByIdAndUpdate(id, updateData, { new: true });
             return {
                 status: 'success',
                 message: 'Cập nhật bệnh viện thành công',
-                data: hospital
+                data: updatedHospital
             };
         } catch (error) {
             return {
@@ -90,17 +104,21 @@ class HospitalService {
     }
     deleteHospital = async (id) => {
         try {
-            const hospital = await Hospital.findByIdAndDelete(id);
-            if (!hospital) {
-                return {
-                    status: 'error',
-                    message: 'Bệnh viện không tồn tại'
-                }
+            const hospital = await Hospital.findById(id);
+            if (hospital && hospital.image) {
+                const oldImagePath = path.join(__dirname, '../../public', hospital.image);
+                fs.unlink(oldImagePath, (err) => {
+                    if (err) {
+                        console.error('Lỗi khi xóa ảnh:', err);
+                    }
+                });
             }
+            // Xóa bệnh viện
+            await Hospital.findByIdAndDelete(id);
+            
             return {
                 status: 'success',
                 message: "Xóa bệnh viện thành công",
-                data: hospital
             };
         } catch (error) {
             return {
