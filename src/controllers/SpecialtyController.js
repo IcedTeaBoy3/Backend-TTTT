@@ -11,12 +11,6 @@ class SpecialtyController {
                     message: 'Vui lòng điền đầy đủ thông tin.'
                 });
             }
-            if (!imagePath) {
-                return res.status(400).json({
-                    status: 'error',
-                    message: 'Vui lòng tải lên ảnh.'
-                })
-            }
             
             const data = await SpecialtyService.createSpecialty({
                 name,
