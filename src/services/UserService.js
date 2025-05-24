@@ -74,7 +74,7 @@ class UserService {
                     message: 'Không thể xóa người dùng có quyền admin'
                 };
             }
-            const deletedUser = await User.DeleteOne({ _id: userId });
+            const deletedUser = await User.deleteOne({ _id: userId });
             return {
                 status: 'success',
                 message: 'Xóa người dùng thành công',

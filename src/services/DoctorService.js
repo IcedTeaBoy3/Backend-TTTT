@@ -160,9 +160,9 @@ class DoctorService {
     getDoctor = async (id) => {
         try {
             const doctor = await Doctor.findById(id)
-                .populate('user', 'name email phone address')
-                .populate('specialty', 'name')
-                .populate('hospital', 'name');
+                .populate('user')
+                .populate('specialty')
+                .populate('hospital');
             if (!doctor) {
                 return {
                     status: 'error',
@@ -180,14 +180,20 @@ class DoctorService {
     }
     deleteManyDoctors = async (ids) => {
         try {
-            const doctors = await Doctor.deleteMany({ _id: { $in: ids } });
+             // Tìm các doctor cần xóa
+            const doctors = await Doctor.find({ _id: { $in: ids } });
             if (!doctors) {
                 return {
                     status: 'error',
                     message: 'Xóa bác sĩ thất bại'
                 };
             }
-            await User.deleteMany({ _id: { $in: ids } });
+            // Lấy danh sách userId tương ứng
+            const userIds = doctors.map(doctor => doctor.user);
+            // Xóa các doctor
+            await Doctor.deleteMany({ _id: { $in: ids } });
+            // Xóa các user tương ứng
+            await User.deleteMany({ _id: { $in: userIds } });
             return {
                 status: 'success',
                 message: 'Xóa bác sĩ thành công'
