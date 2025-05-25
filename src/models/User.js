@@ -15,6 +15,7 @@ const UserSchema = new Schema(
     insuranceCode: { type: String },
     job: { type: String },
     role: { type: String, enum: ['admin', 'patient', 'doctor'], default: 'patient' },
+    isVerified: { type: Boolean, default: false },
   },
   {
     timestamps: true,

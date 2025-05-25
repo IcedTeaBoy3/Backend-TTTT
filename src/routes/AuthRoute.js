@@ -6,4 +6,5 @@ router.post("/register", AuthController.registerUser);
 router.post("/login", AuthController.loginUser);
 router.post("/logout", AuthController.logoutUser);
 router.post("/refresh-token", AuthController.refreshToken);
+router.get("/verify-email", AuthController.verifyEmail);
 module.exports = router;

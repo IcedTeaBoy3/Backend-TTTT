@@ -1,12 +1,14 @@
 const User = require('../models/User');
 const JwtService = require('./JWTService');
+const MailService = require('./MailService');
 const bcrypt = require('bcrypt');
 class AuthService {
     registerUser = async (data) => {
         try {
             const { email, password } = data;
-            const checkEmail = await User.findOne({ email: email });
-            if (checkEmail) {
+            // Kiểm tra email đã tồn tại
+            const existingUser = await User.findOne({ email });
+            if (existingUser) {
                 return {
                     status: 'error',
                     message: 'Email đã tồn tại',
@@ -16,14 +18,30 @@ class AuthService {
             const newUser = await User.create({
                 email: email,
                 password: hashPassword,
+                isVerified: false, // Mặc định là chưa xác thực
             })
-            if (newUser) {
+            if (!newUser) {
                 return {
-                    status: 'success',
-                    message: 'Tạo tài khoản thành công',
-                    data: newUser,
+                    status: 'error',
+                    message: 'Tạo tài khoản thất bại',
                 };
             }
+            // Tạo token tác thực email
+            const verificationToken = JwtService.generateVerificationToken({
+                id: newUser._id,
+                email: newUser.email
+            });
+            // Gửi email xác thực
+            await MailService.sendVerificationEmail(newUser.email, verificationToken);
+           
+            return {
+                status: 'success',
+                message: 'Đăng ký thành công, vui lòng kiểm tra email để xác thực tài khoản',
+                data: {
+                    id: newUser._id,
+                    email: newUser.email,
+                }
+            };
 
         } catch (error) {
             return {
@@ -41,6 +59,12 @@ class AuthService {
                     status: 'error',
                     message: 'Email không tồn tại',
                 };
+            }
+            if(!user?.isVerified){
+                return {
+                    status: "error",
+                    message: "Tài khoản chưa được xác thực"
+                }
             }
             
             const comparePassword = await bcrypt.compare(password, user.password);
@@ -79,6 +103,46 @@ class AuthService {
             return  {
                 status: 'error',
                 message: e.message
+            };
+        }
+    }
+    verifyEmail = async (token) => {
+        try {
+            const decoded = await JwtService.verifyToken(token, process.env.VERIFY_TOKEN_SECRET);
+            if (!decoded) {
+                return {
+                    status: 'error',
+                    message: 'Token xác thực không hợp lệ hoặc đã hết hạn',
+                };
+            }
+            const userId = decoded.id;
+            const user = await User.findById(userId);
+            if (!user) {
+                return {
+                    status: 'error',
+                    message: 'Người dùng không tồn tại',
+                };
+            }
+            // Kiểm tra xem tài khoản đã được xác thực chưa
+            if (user.isVerified) {
+                return {
+                    status: 'success',
+                    message: 'Tài khoản đã được xác thực trước đó',
+                };
+            }
+            user.isVerified = true;
+            await user.save();
+            return {
+                status: 'success',
+                message: 'Xác thực tài khoản thành công',
+                data: {
+                    email: decoded?.email
+                }
+            };
+        } catch (error) {
+            return {
+                status: 'error',
+                message: error.message,
             };
         }
     }

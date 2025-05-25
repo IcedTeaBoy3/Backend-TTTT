@@ -1,6 +1,5 @@
 
 const AuthService = require('../services/AuthService');
-
 class AuthController {
     registerUser = async (req, res) => {
         try {
@@ -106,6 +105,26 @@ class AuthController {
                 message: error.message
             });
         }
+    }
+    verifyEmail = async (req, res) => {
+        try {
+            const token = req.query.token;
+        
+            if (!token) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Thiếu token xác thực',
+                });
+            }
+            const data = await AuthService.verifyEmail(token);
+            res.json(data);
+        }catch (error) {
+            return res.status(500).json({
+                status: 'error',
+                message: error.message,
+            });
+        }
+
     }
 }
 module.exports = new AuthController();

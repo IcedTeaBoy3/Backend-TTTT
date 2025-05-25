@@ -33,11 +33,8 @@ class UserController {
     }
     updateUser = async (req, res) => {
         try {
-            console.log('id', req.params.id);
-            
             const userId = req.params.id;
             const { name, email, phone, dateOfBirth, gender, address, ethnic, idCard, insuranceCode, job } = req.body;
-            console.log(req.body);
             const emailRegex = /\S+@\S+\.\S+/;
             const phoneRegex = /^(0[3|5|7|8|9])+([0-9]{8})$/;
             const validEmail = emailRegex.test(email);

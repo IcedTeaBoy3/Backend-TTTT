@@ -8,6 +8,10 @@ class JwtService {
     generateRefreshToken(payload) {
         return jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
     }
+    generateVerificationToken(payload) {
+        return jwt.sign(payload, process.env.VERIFY_TOKEN_SECRET, { expiresIn: '1h' });
+    }
+
     verifyToken(token, secret) {
         return new Promise((resolve, reject) => {
             jwt.verify(token, secret, (err, decoded) => {
