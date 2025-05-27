@@ -4,6 +4,7 @@ const hospitalRoutes = require('./HospitalRoute');
 const specialRoutes = require('./SpecialtyRoute');
 const doctorRoutes = require('./DoctorRoute');
 const workingScheduleRoutes = require('./WorkingScheduleRoute');
+const appointmentRoutes = require('./AppointmentRoute');
 const routes = (app) => {
     app.use('/api/auth', authRoutes);
     app.use('/api/users', userRoutes);
@@ -11,5 +12,6 @@ const routes = (app) => {
     app.use('/api/specialties', specialRoutes);
     app.use('/api/doctors', doctorRoutes);
     app.use('/api/working-schedules', workingScheduleRoutes);
+    app.use('/api/appointments', appointmentRoutes);
 }
 module.exports = routes;

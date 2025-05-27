@@ -8,9 +8,9 @@ const AppointmentScheme = new Schema(
     timeSlot: { type: String, required: true }, // VD: "09:30"
     reason: { type: String, required: true },
     status: { 
-        type: String, 
-        enum: ['pending', 'confirmed', 'cancelled', 'completed'], 
-        default: 'pending' 
+      type: String, 
+      enum: ['pending', 'confirmed', 'cancelled', 'completed'], 
+      default: 'pending' 
     },
 
   },
