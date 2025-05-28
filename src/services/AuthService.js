@@ -146,6 +146,37 @@ class AuthService {
             };
         }
     }
+    changePassword = async (userId, data) => {
+        try {
+            const { currentPassword, newPassword } = data;
+            const user = await User.findById(userId);
+            if (!user) {
+                return {
+                    status: 'error',
+                    message: 'Người dùng không tồn tại',
+                };
+            }
+            const comparePassword = await bcrypt.compare(currentPassword, user.password);
+            if (!comparePassword) {
+                return {
+                    status: 'error',
+                    message: 'Mật khẩu hiện tại không đúng',
+                };
+            }
+            const hashNewPassword = await bcrypt.hash(newPassword, 10);
+            user.password = hashNewPassword;
+            await user.save();
+            return {
+                status: 'success',
+                message: 'Đổi mật khẩu thành công',
+            };
+        } catch (error) {
+            return {
+                status: 'error',
+                message: error.message,
+            };
+        }
+    }
 }
 
 module.exports = new AuthService();

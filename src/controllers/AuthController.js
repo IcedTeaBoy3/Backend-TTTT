@@ -1,5 +1,6 @@
 
 const AuthService = require('../services/AuthService');
+
 class AuthController {
     registerUser = async (req, res) => {
         try {
@@ -124,6 +125,34 @@ class AuthController {
                 message: error.message,
             });
         }
+
+    }
+    changePassword = async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const { currentPassword, newPassword } = req.body;
+            if(!userId){
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Vui lòng đăng nhập để thay đổi mật khẩu'
+                });
+            }
+            if (!currentPassword || !newPassword) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Vui lòng điền đầy đủ thông tin'
+                });
+            }
+            const data = await AuthService.changePassword(userId, { currentPassword, newPassword });
+            res.json(data);
+        }catch (error) {
+            res.status(500).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+
+
 
     }
 }

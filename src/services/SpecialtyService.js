@@ -1,5 +1,5 @@
 const Specialty = require('../models/Specialty');
-const fs = require('fs');
+const fs = require('fs/promises');
 const path = require('path');
 class SpecialtyService {
     createSpecialty = async (data) => {
@@ -51,7 +51,11 @@ class SpecialtyService {
             const skip = (pageNumber - 1) * limitNumber;
             // Đếm tổng bản ghi
             const total = await Specialty.countDocuments();
-            const specialties = await Specialty.find().skip(skip).limit(limitNumber).exec();;
+            const specialties = await Specialty.find()
+                .skip(skip)
+                .limit(limitNumber)
+                .sort({ createdAt: -1 }) // Sắp xếp theo ngày tạo mới nhất
+                .exec();;
             return {
                 status: 'success',
                 message: 'Lấy danh sách chuyên khoa thành công',
@@ -77,6 +81,8 @@ class SpecialtyService {
                 };
             }
             if(image && specialty.image){
+                console.log('specialty.image', specialty.image);
+                
                 const oldImagePath = path.join(__dirname, '../../public', specialty?.image);
                 try {
                     await fs.unlink(oldImagePath);
@@ -144,14 +150,15 @@ class SpecialtyService {
                 };
             }
             // Xóa file ảnh
-            specialties.forEach((specialty) => {
+            specialties.forEach(async (specialty) => {
                 if (specialty.image) {
                     const filePath = path.join(__dirname, '../../public', specialty.image);
-                    fs.unlink(filePath, (err) => {
-                        if (err) {
-                            console.error('Lỗi khi xóa ảnh:', err);
-                        }
-                    });
+                    try {
+                        await fs.unlink(filePath)
+                        console.log(`Đã xóa ảnh: ${filePath}`);
+                    } catch (err){
+                        console.error('Lỗi khi xóa ảnh:', err);
+                    }
                 }
             });
             // Xóa chuyên khoa
@@ -159,6 +166,30 @@ class SpecialtyService {
             return {
                 status: 'success',
                 message: 'Xóa chuyên khoa thành công',
+            };
+        } catch (error) {
+            return {
+                status: 'error',
+                message: error.message,
+            };
+        }
+    };
+    insertManySpecialties = async (data) => {
+        try {
+            const specialties = data;
+            console.log('specialties', specialties);
+            
+            if (!Array.isArray(specialties) || specialties.length === 0) {
+                return {
+                    status: 'error',
+                    message: 'Vui lòng cung cấp danh sách chuyên khoa hợp lệ',
+                };
+            }
+            const createdSpecialties = await Specialty.insertMany(specialties);
+            return {
+                status: 'success',
+                message: 'Thêm nhiều chuyên khoa thành công',
+                data: createdSpecialties,
             };
         } catch (error) {
             return {

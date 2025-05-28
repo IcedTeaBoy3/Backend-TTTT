@@ -12,4 +12,5 @@ router.get('/get-all-specialties', SpecialtyController.getAllSpecialties);
 router.put('/update-specialty/:id',Authenticate, Authorize(["admin"]),upload.single('image'), SpecialtyController.updateSpecialty);
 router.delete('/delete-specialty/:id',Authenticate, Authorize(["admin"]), SpecialtyController.deleteSpecialty);
 router.post('/delete-all-specialties',Authenticate, Authorize(["admin"]), SpecialtyController.deleteManySpecialties);
+router.post('/insert-many-specialties',Authenticate, Authorize(["admin"]), SpecialtyController.insertManySpecialties);
 module.exports = router;

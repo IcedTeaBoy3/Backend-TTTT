@@ -39,7 +39,6 @@ class WorkingScheduleService {
             }
         }
     }
-
     createWorkingSchedule = async (data) => {
         try {
             const { doctorId, workDate, startTime, endTime } = data;
@@ -152,6 +151,27 @@ class WorkingScheduleService {
                 status: 'success',
                 message: 'Xóa lịch làm việc thành công',
                 data: deletedWorkingSchedule
+            }
+        } catch (error) {
+            return {
+                status: 'error',
+                message: error.message
+            }
+        }
+    }
+    deleteManyWorkingSchedules = async (ids) => {
+        try {
+            const deletedWorkingSchedules = await WorkingSchedule.deleteMany({ _id: { $in: ids } });
+            if (deletedWorkingSchedules.deletedCount === 0) {
+                return {
+                    status: 'error',
+                    message: 'Không tìm thấy lịch làm việc nào để xóa'
+                }
+            }
+            return {
+                status: 'success',
+                message: 'Xóa nhiều lịch làm việc thành công',
+                data: deletedWorkingSchedules
             }
         } catch (error) {
             return {

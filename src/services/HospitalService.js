@@ -1,5 +1,5 @@
 const Hospital = require('../models/Hospital');
-const fs = require('fs');
+const fs = require('fs/promises');
 const path = require('path');
 class HospitalService {
     createHospital = async (data) => {
@@ -107,11 +107,12 @@ class HospitalService {
             const hospital = await Hospital.findById(id);
             if (hospital && hospital.image) {
                 const oldImagePath = path.join(__dirname, '../../public', hospital.image);
-                fs.unlink(oldImagePath, (err) => {
-                    if (err) {
-                        console.error('Lỗi khi xóa ảnh:', err);
-                    }
-                });
+                try {
+                    await fs.unlink(oldImagePath);
+                    console.log('Old image deleted successfully');
+                } catch (err) {
+                    console.error('Error deleting old image:', err.message);
+                }
             }
             // Xóa bệnh viện
             await Hospital.findByIdAndDelete(id);
@@ -129,13 +130,28 @@ class HospitalService {
     }
     deleteManyHospitals = async (ids) => {
         try {
-            const hospitals = await Hospital.deleteMany({ _id: { $in: ids } });
-            if (!hospitals) {
+            const hospitals = await Hospital.find({ _id: { $in: ids } });
+            if (!hospitals || hospitals.length === 0) {
                 return {
                     status: 'error',
                     message: 'Bệnh viện không tồn tại'
                 }
             }
+            // Xóa ảnh của các bệnh viện
+            hospitals.forEach(async (hospital) => {
+                if (hospital.image) {
+                    const oldImagePath = path.join(__dirname, '../../public', hospital.image);
+                    try {
+                        await fs.unlink(oldImagePath);
+                        console.log('Old image deleted successfully');
+                    } catch (err) {
+                        console.error('Error deleting old image:', err.message);
+                    }
+                }
+            });
+            // Xóa các bệnh viện
+            await Hospital.deleteMany({ _id: { $in: ids } });
+
             return {
                 status: 'success',
                 message: "Xóa bệnh viện thành công",

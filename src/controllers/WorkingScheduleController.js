@@ -108,5 +108,24 @@ class WorkingScheduleController {
             });
         }
     }
+    deleteManyWorkingSchedules = async (req, res) => {
+        try {
+            const { ids } = req.body;
+            if (!ids || !Array.isArray(ids) || ids.length === 0) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Vui lòng cung cấp danh sách ID hợp lệ',
+                });
+            }
+            const data = await WorkingScheduleService.deleteManyWorkingSchedules(ids);
+            return res.json(data);
+        } catch (error) {
+            return res.status(500).json({
+                status: 'error',
+                message: error.message,
+                
+            });
+        }
+    }
 }
 module.exports = new WorkingScheduleController();

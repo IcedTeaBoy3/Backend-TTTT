@@ -2,7 +2,16 @@ const User = require('../models/User');
 class UserService {
     getAllUsers = async () => {
         try {
-            const users = await User.find();
+            const users = await User.find({role: 'patient'})
+                .sort({ createdAt: -1 })
+                .lean();
+
+            if (!users || users.length === 0) {
+                return {
+                    status: 'error',
+                    message: 'Không có người dùng nào'
+                };
+            }
             return {
                 status: 'success',
                 message: 'Lấy danh sách người dùng thành công',
@@ -100,6 +109,33 @@ class UserService {
                 status: 'success',
                 message: 'Xóa người dùng thành công',
                 data: users
+            };
+        } catch (error) {
+            return {
+                status: 'error',
+                message: error.message
+            };
+        }
+    }
+    insertManyUsers = async (usersData) => {
+        try {
+            // Lấy danh sách email từ CSV
+            const emailsFromCSV = usersData.map(user => user.email);
+
+            // Tìm email đã tồn tại trong DB
+            const existingUsers = await User.find({ email: { $in: emailsFromCSV } });
+            const existingEmails = existingUsers.map(user => user.email);
+
+            // Lọc ra những user có email chưa tồn tại
+            const newUsers = usersData.filter(user => !existingEmails.includes(user.email));
+
+            // Thêm user mới vào DB
+            if (newUsers.length > 0) {
+                await User.insertMany(newUsers);
+            }
+            return {
+                status: 'success',
+                message: (newUsers.length > 0 ? `${newUsers.length} người dùng mới đã được thêm.` : ' Không có người dùng mới nào được thêm.'),
             };
         } catch (error) {
             return {

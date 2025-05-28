@@ -35,6 +35,8 @@ class UserController {
         try {
             const userId = req.params.id;
             const { name, email, phone, dateOfBirth, gender, address, ethnic, idCard, insuranceCode, job } = req.body;
+            console.log('req.body', req.body);
+            
             const emailRegex = /\S+@\S+\.\S+/;
             const phoneRegex = /^(0[3|5|7|8|9])+([0-9]{8})$/;
             const validEmail = emailRegex.test(email);
@@ -45,7 +47,7 @@ class UserController {
                     message: 'Vui lòng cung cấp ID người dùng'
                 });
             }
-            if (!name || !email || !phone || !dateOfBirth || !gender || !address || !ethnic) {
+            if (!name || !email || !phone || !address) {
                 return res.status(400).json({
                     status: 'error',
                     message: 'Vui lòng điền đầy đủ thông tin'
@@ -98,6 +100,24 @@ class UserController {
                 });
             }
             const data = await UserService.deleteManyUsers(userIds);
+            res.json(data);
+        } catch (error) {
+            res.status(500).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
+    insertManyUsers = async (req, res) => {
+        try {
+            const users = req.body;
+            if (!users || users.length === 0) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Vui lòng cung cấp danh sách người dùng'
+                });
+            }
+            const data = await UserService.insertManyUsers(users);
             res.json(data);
         } catch (error) {
             res.status(500).json({

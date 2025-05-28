@@ -27,8 +27,6 @@ class SpecialtyController {
             });
         }
     };
-
-
     getSpecialty = async (req, res) => {
         try {
             const { id } = req.params;
@@ -47,12 +45,11 @@ class SpecialtyController {
             });
         }
     }
-
     getAllSpecialties = async (req, res) => {
         try {
             const { page, limit } = req.query;
-            const pageNumber = parseInt(page) || 1;
-            const limitNumber = parseInt(limit) || 10;
+            const pageNumber = parseInt(page);
+            const limitNumber = parseInt(limit);
             const data = await SpecialtyService.getAllSpecialties({pageNumber,limitNumber});
             res.json(data);
         } catch (error) {
@@ -62,14 +59,11 @@ class SpecialtyController {
             });
         }
     }
-
     updateSpecialty = async (req, res) => {
         try {
             const { id } = req.params;
             const { name, description } = req.body;
             const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
-   
-            
             if (!id) {
                 return res.status(400).json({
                     status: 'error',
@@ -95,7 +89,6 @@ class SpecialtyController {
             });
         }
     }
-
     deleteSpecialty = async (req, res) => {
         try {
             const { id } = req.params;
@@ -114,7 +107,6 @@ class SpecialtyController {
             });
         }
     }
-
     deleteManySpecialties = async (req, res) => {
         try {
             const { ids } = req.body;
@@ -133,5 +125,24 @@ class SpecialtyController {
             });
         }
     }
+    insertManySpecialties = async (req, res) => {
+        try {
+            const { specialties } = req.body;
+            if (!specialties || specialties.length === 0) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Vui lòng cung cấp danh sách chuyên khoa'
+                });
+            }
+            const data = await SpecialtyService.insertManySpecialties(specialties);
+            res.json(data);
+        } catch (error) {
+            res.status(500).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
+
 }
 module.exports = new SpecialtyController();
