@@ -47,7 +47,8 @@ class MailService {
             addressHospital,
             scheduleDate,
             timeSlot,
-            reason
+            reason,
+            stt
         } = bookingDetails;
 
         const formattedDate = new Date(scheduleDate).toLocaleDateString('vi-VN');
@@ -61,8 +62,10 @@ class MailService {
                     <h2 style="color: #2e6c80;">Xác nhận đặt lịch hẹn khám bệnh</h2>
                     <p>Xin chào <strong>${patientName}</strong>,</p>
                     <p>Bạn đã đặt lịch hẹn thành công với bác sĩ <strong>${doctorName}</strong>.</p>
+
                     <h3>Chi tiết lịch hẹn:</h3>
                     <ul>
+                        <li><strong>Số thứ tự:</strong> ${stt}</li> 
                         <li><strong>Ngày khám:</strong> ${formattedDate}</li>
                         <li><strong>Khung giờ:</strong> ${timeSlot}-${addMinutesToTime(timeSlot, 30)}</li>
                         <li><strong>Địa chỉ phòng khám:</strong> ${addressHospital}</li>

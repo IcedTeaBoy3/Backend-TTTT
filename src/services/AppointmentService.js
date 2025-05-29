@@ -14,13 +14,13 @@ class AppointmentService {
             // Các khung giờ đã được đặt
             const bookedSlots = appointments.map(a => a.timeSlot);
             
-            // Tạo danh sách khung giờ hợp lệ trong ngày (ví dụ: 08:00 đến 17:00)
-            const allSlots = generateTimeSlots(schedule.startTime, schedule.endTime, 30);
+            // Tạo danh sách khung giờ hợp lệ trong ngày mặc định ca làm việc 30p
+            const allSlots = generateTimeSlots(schedule.startTime, schedule.endTime);
             
             // Lọc ra các khung giờ còn trống
             const availableSlots = allSlots.filter(slot => !bookedSlots.includes(slot));
             // Nếu không có khung giờ nào còn trống, trả về thông báo lỗi
-            if (availableSlots.length === 0) {
+            if (availableSlots.length === 0 || !availableSlots) {
                 return {
                     status: 'error',
                     message: 'Không còn khung giờ nào trống trong ngày này',
@@ -38,7 +38,14 @@ class AppointmentService {
             }
 
             // Tạo mới lịch hẹn
-            const appointment = new Appointment(data);
+            const appointment = new Appointment({
+                patient: data.patient,
+                doctor: data.doctor,
+                schedule: data.schedule,
+                timeSlot: data.timeSlot,
+                reason: data.reason,
+                stt: appointments.length + 1, // Số thứ tự của lịch hẹn
+            });
             const savedAppointment = await appointment.save();
             
            const populatedAppointment = await appointment.populate([
@@ -63,16 +70,18 @@ class AppointmentService {
             const scheduleDate = populatedAppointment?.schedule?.workDate;
             const timeSlot = populatedAppointment?.timeSlot;
             const reason = populatedAppointment?.reason;
+            const stt = populatedAppointment?.stt;
 
             // Gửi email nếu dữ liệu hợp lệ
-            if (patientEmail && doctorName && hospitalAddress && scheduleDate) {
+            if (patientEmail && doctorName && hospitalAddress && scheduleDate && stt) {
                 await MailService.sendBookingSuccessEmail(patientEmail, {
                     patientName,
                     doctorName,
                     addressHospital: hospitalAddress,
                     scheduleDate,
                     timeSlot,
-                    reason
+                    reason,
+                    stt
                 });
             } else {
                 return {
@@ -98,7 +107,7 @@ class AppointmentService {
             const appointments = await Appointment.find()
                 .skip(skip)
                 .limit(limit)
-                .select('patient doctor schedule timeSlot reason createdAt')
+                .select('patient doctor schedule timeSlot reason status createdAt')
                 .populate('patient', 'name')
                 .populate({
                     path: 'doctor',
@@ -116,6 +125,139 @@ class AppointmentService {
             return {
                 status: 'success',
                 message: 'Lấy danh sách lịch hẹn thành công',
+                data: appointments,
+                total: totalAppointments,
+            };
+        } catch (error) {
+            return {
+                status: 'error',
+                message: error.message
+            };
+        }
+    };
+    deleteAppointment = async (id) => {
+        try {
+            const appointment = await Appointment.findByIdAndDelete(id);
+            if (!appointment) {
+                return {
+                    status: 'error',
+                    message: 'Không tìm thấy lịch hẹn với ID này'
+                };
+            }
+            return {
+                status: 'success',
+                message: 'Lịch hẹn đã được xoá thành công',
+                data: appointment
+            };
+        } catch (error) {
+            return {
+                status: 'error',
+                message: error.message
+            };
+        }
+    };
+    updateAppointment = async (id, data) => {
+        try {
+            // Kiểm tra xem lịch hẹn có tồn tại không
+            const existingAppointment = await Appointment.findById(id);
+            if (!existingAppointment) {
+                return {
+                    status: 'error',
+                    message: 'Không tìm thấy lịch hẹn với ID này'
+                };
+            }
+            // Kiểm tra xem khung giờ mới có còn trống không
+            const schedule = await WorkingSchedule.findById(data.schedule);
+            const appointments = await Appointment.find({
+                doctor: existingAppointment.doctor,
+                schedule: data.schedule,
+            })
+            // Lịch hẹn đã được đặt
+            const bookedSlots = appointments.map(a => a.timeSlot);
+            // Tạo danh sách khung giờ hợp lệ trong ngày mặc định ca làm việc 30p
+            const allSlots = generateTimeSlots(schedule.startTime, schedule.endTime);
+            // Lọc ra các khung giờ còn trống
+            const availableSlots = allSlots.filter(slot => !bookedSlots.includes(slot));
+            // Nếu không có khung giờ nào còn trống, trả về thông báo lỗi
+            if (availableSlots.length === 0 || !availableSlots) {
+                return {
+                    status: 'error',
+                    message: 'Không còn khung giờ nào trống trong ngày này',
+                };
+            }
+            // Kiểm tra xem khung giờ người dùng chọn còn trống không
+            if (!availableSlots.includes(data.timeSlot)) {
+                return {
+                    status: 'error',
+                    message: 'Khung giờ này đã được đặt, vui lòng chọn khung giờ khác',
+                    availableSlots // Gửi danh sách khung giờ còn trống để phía frontend có thể dùng
+                };
+            }
+            // Cập nhật lịch hẹn
+            const appointment = await Appointment.findByIdAndUpdate(id, data, { new: true })
+
+            return {
+                status: 'success',
+                message: 'Lịch hẹn đã được cập nhật thành công',
+                data: appointment
+            }
+
+        } catch (error) {
+            return {
+                status: 'error',
+                message: error.message
+            };
+        }
+
+    
+    }
+    deleteManyAppointments = async (ids) => {
+        try {
+            const appointments = await Appointment.find({ _id: { $in: ids } });
+            if (!appointments || appointments.length === 0) {
+                return {
+                    status: 'error',
+                    message: 'Không tìm thấy lịch hẹn nào với các ID này'
+                };
+            }
+            await Appointment.deleteMany({ _id: { $in: ids } });
+            return {
+                status: 'success',
+                message: 'Đã xoá thành công các lịch hẹn',
+                data: appointments
+            };
+        } catch (error) {
+            return {
+                status: 'error',
+                message: error.message
+            };
+        }
+    };
+    getAllAppointmentsByPatient = async (data) => {
+        try {
+            const { patientId, page , limit } = data;
+            const skip = (page - 1) * limit;
+            const appointments = await Appointment.find({ patient: patientId})
+                .populate({
+                    path: 'doctor',
+                    select: 'user specialty hospital',
+                    populate: [
+                        { path: 'user', select: 'name' },
+                        { path: 'specialty', select: 'name' },
+                        { path: 'hospital', select: 'name address' }
+                    ]
+                })
+                .skip(skip)
+                .limit(limit)
+                .populate('patient', 'name')
+                .populate('schedule', 'workDate startTime endTime')
+                .sort({ createdAt: -1 })
+                .lean();
+
+            const totalAppointments = await Appointment.countDocuments({ patient: patientId });
+            return {
+                status: 'success',
+                message: 'Lấy danh sách lịch hẹn của bệnh nhân thành công',
                 data: appointments,
                 total: totalAppointments,
             };

@@ -7,6 +7,7 @@ const AppointmentScheme = new Schema(
     schedule: { type: mongoose.Schema.Types.ObjectId, ref: 'WorkingSchedule', required: true },
     timeSlot: { type: String, required: true }, // VD: "09:30"
     reason: { type: String, required: true },
+    stt: { type: Number, required: true }, // Số thứ tự của lịch hẹn
     status: { 
       type: String, 
       enum: ['pending', 'confirmed', 'cancelled', 'completed'], 

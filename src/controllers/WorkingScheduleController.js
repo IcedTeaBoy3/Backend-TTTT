@@ -20,8 +20,6 @@ class WorkingScheduleController {
     }
     createWorkingSchedule = async (req, res) => {
         try {
-            console.log(req.body);
-            
             const { doctorId,workDate, startTime, endTime } = req.body;
             if (!doctorId || !workDate || !startTime || !endTime) {
                 return res.status(400).json({

@@ -42,6 +42,21 @@ class WorkingScheduleService {
     createWorkingSchedule = async (data) => {
         try {
             const { doctorId, workDate, startTime, endTime } = data;
+            // Kiểm tra trùng lịch làm việc trong cùng ngày
+            const existedSchedule = await WorkingSchedule.findOne({
+                doctor: doctorId,
+                workDate: {
+                    $gte: new Date(new Date(workDate).setHours(0, 0, 0, 0)),
+                    $lte: new Date(new Date(workDate).setHours(23, 59, 59, 999))
+                }
+            });
+
+            if (existedSchedule) {
+                return {
+                    status: 'error',
+                    message: 'Bác sĩ đã có lịch làm việc trong ngày này!'
+                };
+            }
             const newWorkingSchedule = new WorkingSchedule({
                 doctor: doctorId,
                 workDate,
@@ -112,8 +127,20 @@ class WorkingScheduleService {
     updateWorkingSchedule = async (data) => {
         try {
             const { id, doctor, workDate, startTime, endTime } = data;
-            console.log('data', data);
-            
+            const existedSchedule = await WorkingSchedule.findOne({
+                doctor: doctor,
+                workDate: {
+                    $gte: new Date(new Date(workDate).setHours(0, 0, 0, 0)),
+                    $lte: new Date(new Date(workDate).setHours(23, 59, 59, 999))
+                }
+            });
+
+            if (existedSchedule) {
+                return {
+                    status: 'error',
+                    message: 'Bác sĩ đã có lịch làm việc trong ngày này!'
+                };
+            }
             const updatedWorkingSchedule = await WorkingSchedule.findByIdAndUpdate(id, {
                 doctor,
                 workDate,
