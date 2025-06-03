@@ -11,6 +11,14 @@ class AppointmentService {
                 schedule: data.schedule
             });
             const schedule = await WorkingSchedule.findById(data.schedule);
+            // Kiểm tra ngày xem có nhỏ hơn ngày hiện tại không
+            if (new Date(schedule.workDate) < new Date()) {
+                return {
+                    status: 'error',
+                    message: 'Ngày làm việc không hợp lệ, vui lòng chọn ngày trong tương lai',
+                    availableSlots: [] // Trả về mảng rỗng để phía frontend có thể hiển thị
+                };
+            }
             // Các khung giờ đã được đặt
             const bookedSlots = appointments.map(a => a.timeSlot);
             
@@ -268,5 +276,47 @@ class AppointmentService {
             };
         }
     };
+    cancelAppointment = async (id) => {
+        try {
+            const appointment = await Appointment.findByIdAndUpdate(id, { status: 'cancelled' }, { new: true });
+            if (!appointment) {
+                return {
+                    status: 'error',
+                    message: 'Không tìm thấy lịch hẹn với ID này'
+                };
+            }
+            return {
+                status: 'success',
+                message: 'Lịch hẹn đã được huỷ thành công',
+                data: appointment
+            };
+        } catch (error) {
+            return {
+                status: 'error',
+                message: error.message
+            };
+        }
+    };
+    confirmAppointment = async (id) => {
+        try {
+            const appointment = await Appointment.findByIdAndUpdate(id, { status: 'confirmed' }, { new: true });
+            if (!appointment) {
+                return {
+                    status: 'error',
+                    message: 'Không tìm thấy lịch hẹn với ID này'
+                };
+            }
+            return {
+                status: 'success',
+                message: 'Lịch hẹn đã được xác nhận thành công',
+                data: appointment
+            }
+        } catch (error) {
+            return {
+                status: 'error',
+                message: error.message
+            };
+        }
+    }
 }
 module.exports = new AppointmentService();

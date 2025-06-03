@@ -3,8 +3,8 @@ class WorkingScheduleController {
     getAllWorkingSchedules = async (req, res) => {
         try {
             const { page, limit } = req.query;
-            const pageNumber = parseInt(page) || 1;
-            const limitNumber = parseInt(limit) || 10;
+            const pageNumber = parseInt(page); 
+            const limitNumber = parseInt(limit);
             const data = await WorkingScheduleService.getAllWorkingSchedules({
                 pageNumber,
                 limitNumber,

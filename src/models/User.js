@@ -4,7 +4,7 @@ const UserSchema = new Schema(
   {
     name: { type: String, maxLength: 255 },
     email: { type: String, maxLength: 255, required: true,unique: true },
-    password: { type: String, maxLength: 255, required: true },
+    password: { type: String, maxLength: 255},
     phone: { type: String },
     dateOfBirth: { type: Date },
     gender: { type: String, enum: ['male','female'] },

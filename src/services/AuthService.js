@@ -2,6 +2,7 @@ const User = require('../models/User');
 const JwtService = require('./JWTService');
 const MailService = require('./MailService');
 const bcrypt = require('bcrypt');
+const {OAuth2Client} = require('google-auth-library'); // Thêm thư viện Google Auth nếu cần
 class AuthService {
     registerUser = async (data) => {
         try {
@@ -174,6 +175,60 @@ class AuthService {
             return {
                 status: 'error',
                 message: error.message,
+            };
+        }
+    }
+    googleLogin = async (token) => {
+        const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const { email, name, picture } = ticket.getPayload();
+        const user = await User.findOne({ email: email });
+        if (user) {
+            // Nếu người dùng đã tồn tại, kiểm tra xem tài khoản đã được xác thực chưa
+            if (!user.isVerified) {
+                return {
+                    status: 'error',
+                    message: 'Tài khoản chưa được xác thực',
+                };
+            }
+            const access_token = JwtService.generateAccessToken({
+                id: user._id,
+                role: user.role
+            });
+            const refresh_token = JwtService.generateRefreshToken({
+                id: user._id,
+                role: user.role
+            });
+            return {
+                status: 'success',
+                message: 'Đăng nhập thành công',
+                access_token,
+                refresh_token
+            };
+        } else {
+            // Nếu người dùng chưa tồn tại, tạo mới
+            const newUser = await User.create({
+                email: email,
+                name: name,
+                avatar: picture,
+                isVerified: true, // Mặc định là đã xác thực
+            });
+            const access_token = JwtService.generateAccessToken({
+                id: newUser._id,
+                role: newUser.role
+            });
+            const refresh_token = JwtService.generateRefreshToken({
+                id: newUser._id,
+                role: newUser.role
+            });
+            return {
+                status: 'success',
+                message: 'Đăng nhập thành công',
+                access_token,
+                refresh_token
             };
         }
     }

@@ -155,5 +155,30 @@ class AuthController {
 
 
     }
+    googleLogin = async (req, res) => {
+        try {
+            const { idToken } = req.body;
+            if (!idToken) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Vui lòng cung cấp idToken'
+                });
+            }
+            const data = await AuthService.googleLogin(idToken);
+            const { refresh_token, ...newData } = data;
+            res.cookie('refresh_token', refresh_token, {
+                httpOnly: true,
+                secure: process.env.IS_PRODUCTION ? true : false,
+                sameSite: process.env.IS_PRODUCTION ? 'None' : 'Lax',
+                maxAge: 7 * 24 * 60 * 60 * 1000
+            });
+            res.json(newData);
+        } catch (error) {
+            res.status(500).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
 }
 module.exports = new AuthController();

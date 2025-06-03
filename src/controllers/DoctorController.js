@@ -86,8 +86,8 @@ class DoctorController {
     getAllDoctors = async (req, res) => { 
         try {
             const { page, limit } = req.query;
-            const pageNumber = parseInt(page) || 1;
-            const limitNumber = parseInt(limit) || 10;
+            const pageNumber = parseInt(page) 
+            const limitNumber = parseInt(limit)
             const data = await DoctorService.getAllDoctors({ page: pageNumber, limit: limitNumber });
             res.json(data);
         } catch (error) {
@@ -125,6 +125,23 @@ class DoctorController {
                 });
             }
             const data = await DoctorService.deleteManyDoctors(ids);
+            res.json(data);
+        } catch (error) {
+            res.status(500).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
+    searchDoctors = async (req, res) => {
+        try {
+            const { keyword, specialty , page, limit } = req.query;
+            let pageNumber = parseInt(page)
+            if (isNaN(pageNumber) || pageNumber < 1) {
+                pageNumber = 1;
+            }
+            const limitNumber = parseInt(limit)
+            const data = await DoctorService.searchDoctors({ keyword, specialty, pageNumber, limitNumber});
             res.json(data);
         } catch (error) {
             res.status(500).json({

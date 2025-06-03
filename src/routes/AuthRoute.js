@@ -4,6 +4,7 @@ const AuthController = require("../controllers/AuthController");
 const { Authenticate } = require("../middlewares/AuthMiddleware");
 router.post("/register", AuthController.registerUser);
 router.post("/login", AuthController.loginUser);
+router.post("/google-login", AuthController.googleLogin);
 router.post("/logout", AuthController.logoutUser);
 router.post("/refresh-token", AuthController.refreshToken);
 router.get("/verify-email", AuthController.verifyEmail);

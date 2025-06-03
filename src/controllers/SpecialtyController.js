@@ -48,7 +48,8 @@ class SpecialtyController {
     getAllSpecialties = async (req, res) => {
         try {
             const { page, limit } = req.query;
-            const pageNumber = parseInt(page);
+            let pageNumber = parseInt(page);
+            if (isNaN(pageNumber) || pageNumber < 1) pageNumber = 1;
             const limitNumber = parseInt(limit);
             const data = await SpecialtyService.getAllSpecialties({pageNumber,limitNumber});
             res.json(data);

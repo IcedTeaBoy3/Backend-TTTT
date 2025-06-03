@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Doctor = require('../models/Doctor');
 const bcrypt = require('bcrypt');
+const mongoose = require('mongoose');
 class DoctorService {
     createDoctor = async (data) => {
         try {
@@ -202,5 +203,91 @@ class DoctorService {
             throw error;
         }
     }
+    searchDoctors = async (data) => {
+        try {
+            const { keyword = '', specialty = '', pageNumber = 1, limitNumber = 10 } = data;
+            console.log('Search Doctors:', { keyword, specialty, pageNumber, limitNumber });
+            const skip = (pageNumber - 1) * limitNumber;
+
+            // Tạo phần $match cho tìm kiếm
+            const matchConditions = [
+                { 'user.name': { $regex: keyword, $options: 'i' } },
+                { 'specialty.name': { $regex: keyword, $options: 'i' } },
+                { 'hospital.name': { $regex: keyword, $options: 'i' } },
+                { 'description': { $regex: keyword, $options: 'i' } },
+                { 'qualification': { $regex: keyword, $options: 'i' } },
+            ];
+
+            // Nếu có truyền specialty ID, thêm điều kiện lọc
+            const matchQuery = {
+                $and: [
+                    { $or: matchConditions },
+                ]
+            };
+
+            if (specialty) {
+                matchQuery.$and.push({ 'specialty._id': new mongoose.Types.ObjectId(specialty) });
+            }
+
+            // Pipeline chung
+            const commonPipeline = [
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'user',
+                        foreignField: '_id',
+                        as: 'user',
+                    },
+                },
+                { $unwind: '$user' },
+                {
+                    $lookup: {
+                        from: 'specialties',
+                        localField: 'specialty',
+                        foreignField: '_id',
+                        as: 'specialty',
+                    },
+                },
+                { $unwind: '$specialty' },
+                {
+                    $lookup: {
+                        from: 'hospitals',
+                        localField: 'hospital',
+                        foreignField: '_id',
+                        as: 'hospital',
+                    },
+                },
+                { $unwind: '$hospital' },
+                { $match: matchQuery },
+            ];
+
+            // Lấy danh sách bác sĩ
+            const doctors = await Doctor.aggregate([
+                ...commonPipeline,
+                { $skip: skip },
+                { $limit: Number(limitNumber) },
+            ]);
+
+            // Lấy tổng số bác sĩ
+            const totalCountAgg = await Doctor.aggregate([
+                ...commonPipeline,
+                { $count: 'total' },
+            ]);
+            const total = totalCountAgg[0]?.total || 0;
+
+            return {
+                status: 'success',
+                message: 'Tìm kiếm bác sĩ thành công',
+                data: doctors,
+                total: total,
+            };
+        } catch (error) {
+            return {
+                status: 'error',
+                message: 'Đã xảy ra lỗi khi tìm kiếm bác sĩ: ' + error.message,
+            };
+        }
+    }
+
 }
 module.exports = new DoctorService();
