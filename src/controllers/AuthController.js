@@ -130,17 +130,23 @@ class AuthController {
     changePassword = async (req, res) => {
         try {
             const userId = req.user.id;
-            const { currentPassword, newPassword } = req.body;
+            const { currentPassword, newPassword,confirmPassword } = req.body;
             if(!userId){
                 return res.status(400).json({
                     status: 'error',
                     message: 'Vui lòng đăng nhập để thay đổi mật khẩu'
                 });
             }
-            if (!currentPassword || !newPassword) {
+            if (!newPassword || !confirmPassword) {
                 return res.status(400).json({
                     status: 'error',
-                    message: 'Vui lòng điền đầy đủ thông tin'
+                    message: 'Vui lòng cung cấp đầy đủ thông tin'
+                });
+            }
+            if (newPassword !== confirmPassword) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Mật khẩu mới và xác nhận mật khẩu không khớp'
                 });
             }
             const data = await AuthService.changePassword(userId, { currentPassword, newPassword });
@@ -178,6 +184,62 @@ class AuthController {
                 status: 'error',
                 message: error.message
             });
+        }
+    }
+    forgotPassword = async (req, res) => {
+        try {
+            const { email } = req.body;
+            console.log('email', email);
+            
+            const emailRegex = /\S+@\S+\.\S+/;
+            if (!emailRegex.test(email)) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Email không đúng định dạng'
+                });
+            }
+            if (!email) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Vui lòng cung cấp email'
+                });
+            }
+            const data = await AuthService.forgotPassword(email);
+            res.json(data);
+        } catch (error) {
+            res.status(500).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
+    resetPassword = async (req, res) => {
+        try {
+            const { token } = req.params;
+            const { password } = req.body;
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            if (!token) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Thiếu token xác thực'
+                });
+            }
+            if (!password) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Vui lòng cung cấp mật khẩu mới'
+                });
+            }
+            if (!passwordRegex.test(password)) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Mật khẩu có ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt'
+                });
+            }
+            const data = await AuthService.resetPassword(token, password);
+            res.json(data);
+        } catch (err) {
+            res.status(500).json({ message: err.message });
         }
     }
 }

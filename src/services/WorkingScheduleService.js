@@ -1,4 +1,5 @@
 const WorkingSchedule = require('../models/WorkingSchedule');
+const {isSameDay} = require('../utils/dateUtils'); // Giả sử bạn có một hàm isSameDay trong utils để so sánh ngày
 class WorkingScheduleService {
     getAllWorkingSchedules = async (data) => {
         try {
@@ -109,19 +110,22 @@ class WorkingScheduleService {
     updateWorkingSchedule = async (data) => {
         try {
             const { id, doctor, workDate, startTime, endTime } = data;
-            const existedSchedule = await WorkingSchedule.findOne({
-                doctor: doctor,
-                workDate: {
-                    $gte: new Date(new Date(workDate).setHours(0, 0, 0, 0)),
-                    $lte: new Date(new Date(workDate).setHours(23, 59, 59, 999))
+            const workingSchedule = await WorkingSchedule.findById(id);
+            if(!isSameDay(workingSchedule.workDate, workDate)) {
+                const existedSchedule = await WorkingSchedule.findOne({
+                    doctor: doctor,
+                    workDate: {
+                        $gte: new Date(new Date(workDate).setHours(0, 0, 0, 0)),
+                        $lte: new Date(new Date(workDate).setHours(23, 59, 59, 999))
+                    }
+                });
+    
+                if (existedSchedule) {
+                    return {
+                        status: 'error',
+                        message: 'Bác sĩ đã có lịch làm việc trong ngày này!'
+                    };
                 }
-            });
-
-            if (existedSchedule) {
-                return {
-                    status: 'error',
-                    message: 'Bác sĩ đã có lịch làm việc trong ngày này!'
-                };
             }
             const updatedWorkingSchedule = await WorkingSchedule.findByIdAndUpdate(id, {
                 doctor,

@@ -2,6 +2,7 @@ const Appointment = require('../models/Appointment');
 const WorkingSchedule = require ('../models/WorkingSchedule');
 const MailService = require('./MailService');
 const { generateTimeSlots } = require('../utils/timeUtils');
+const {toLocalStartOfDay, toLocalEndOfDay} = require('../utils/dateUtils');
 class AppointmentService {
     createAppointment = async (data) => {
         try {
@@ -12,11 +13,12 @@ class AppointmentService {
             });
             const schedule = await WorkingSchedule.findById(data.schedule);
             // Kiểm tra ngày xem có nhỏ hơn ngày hiện tại không
-            if (new Date(schedule.workDate) < new Date()) {
+            const today = new Date();
+            const workDate = new Date(schedule.workDate);
+            if (workDate < toLocalStartOfDay(today)) {
                 return {
                     status: 'error',
                     message: 'Ngày làm việc không hợp lệ, vui lòng chọn ngày trong tương lai',
-                    availableSlots: [] // Trả về mảng rỗng để phía frontend có thể hiển thị
                 };
             }
             // Các khung giờ đã được đặt

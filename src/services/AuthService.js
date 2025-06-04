@@ -2,6 +2,7 @@ const User = require('../models/User');
 const JwtService = require('./JWTService');
 const MailService = require('./MailService');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const {OAuth2Client} = require('google-auth-library'); // Thêm thư viện Google Auth nếu cần
 class AuthService {
     registerUser = async (data) => {
@@ -136,9 +137,6 @@ class AuthService {
             return {
                 status: 'success',
                 message: 'Xác thực tài khoản thành công',
-                data: {
-                    email: decoded?.email
-                }
             };
         } catch (error) {
             return {
@@ -157,6 +155,17 @@ class AuthService {
                     message: 'Người dùng không tồn tại',
                 };
             }
+            // Đăng nhập bằng google không cần mật khẩu
+            if(!user.has_password) {
+                const hashNewPassword = await bcrypt.hash(newPassword, 10);
+                user.password = hashNewPassword;
+                user.has_password = true; // Đánh dấu là có mật khẩu
+                await user.save();
+                return {
+                    status: 'success',
+                    message: 'Thiết lập mật khẩu thành công',
+                };
+            }
             const comparePassword = await bcrypt.compare(currentPassword, user.password);
             if (!comparePassword) {
                 return {
@@ -164,9 +173,18 @@ class AuthService {
                     message: 'Mật khẩu hiện tại không đúng',
                 };
             }
+            // 🛑 Kiểm tra trùng mật khẩu mới và cũ
+            const isSameAsOld = await bcrypt.compare(newPassword, user.password);
+            if (isSameAsOld) {
+                return {
+                    status: 'error',
+                    message: 'Mật khẩu mới không được trùng với mật khẩu hiện tại',
+                };
+            }
             const hashNewPassword = await bcrypt.hash(newPassword, 10);
             user.password = hashNewPassword;
             await user.save();
+        
             return {
                 status: 'success',
                 message: 'Đổi mật khẩu thành công',
@@ -215,6 +233,7 @@ class AuthService {
                 name: name,
                 avatar: picture,
                 isVerified: true, // Mặc định là đã xác thực
+                has_password: false // Không có mật khẩu
             });
             const access_token = JwtService.generateAccessToken({
                 id: newUser._id,
@@ -229,6 +248,102 @@ class AuthService {
                 message: 'Đăng nhập thành công',
                 access_token,
                 refresh_token
+            };
+        }
+    }
+    forgotPassword = async (email) => {
+        try {
+            const user = await User.findOne({ email: email });
+            if (!user) {
+                return {
+                    status: 'error',
+                    message: 'Email không tồn tại',
+                };
+            }
+            //Kiểm tra nếu đã có yêu cầu trước đó
+            if (user.resetPasswordToken && user.resetPasswordExpire > Date.now()) {
+                return {
+                    status: 'error',
+                    message: 'Bạn đã yêu cầu đặt lại mật khẩu gần đây. Vui lòng kiểm tra email hoặc đợi 15 phút'
+                };
+            }
+
+            // Tạo token reset password
+            const resetToken = crypto.randomBytes(20).toString('hex');
+            const hashedToken = crypto
+                .createHash('sha256')
+                .update(resetToken)
+                .digest('hex');
+            // Lưu token và thời gian hết hạn vào database
+            user.resetPasswordToken = hashedToken;
+            user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 phút
+            await user.save();
+            // Gửi email với token
+            try {
+
+                await MailService.sendResetPasswordEmail(user.email, resetToken);
+
+            }catch (error) {
+                user.resetPasswordToken = undefined;
+                user.resetPasswordExpire = undefined;
+                await user.save();
+                return {
+                    status: 'error',
+                    message: 'Gửi email thất bại: ' + error.message,
+                };
+            }
+            return {
+                status: 'success',
+                message: 'Vui lòng kiểm tra email để đặt lại mật khẩu',
+            }
+        } catch (error) {
+            return {
+                status: 'error',
+                message: error.message,
+            };
+        }
+    }
+    resetPassword = async (token, newPassword) => {
+        try {
+            
+            const hashedToken = crypto
+                .createHash('sha256')
+                .update(token)
+                .digest('hex');
+            const user = await User.findOne({
+                resetPasswordToken: hashedToken,
+                resetPasswordExpire: { $gt: Date.now() } // Kiểm tra token còn hiệu lực
+            });
+            if (!user) {
+                return {
+                    status: 'error',
+                    message: 'Token không hợp lệ hoặc đã hết hạn',
+                };
+            }
+            if(user.has_password) {
+                const isSameAsOld = await bcrypt.compare(newPassword, user.password);
+                if (isSameAsOld) {
+                    return {
+                        status: 'error',
+                        message: 'Mật khẩu mới không được trùng với mật khẩu hiện tại',
+                    };
+                }
+            }
+            // Mã hóa mật khẩu mới
+            const hashNewPassword = await bcrypt.hash(newPassword, 10);
+            user.password = hashNewPassword;
+            user.resetPasswordToken = undefined; // Xóa token sau khi đặt lại mật khẩu
+            user.resetPasswordExpire = undefined; // Xóa thời gian hết hạn
+            user.has_password = true; // Đánh dấu là có mật khẩu
+            await user.save();
+            return {
+                status: 'success',
+                message: 'Đặt lại mật khẩu thành công',
+            };
+        } catch (error) {
+            return {
+                status: 'error',
+                message: error.message,
             };
         }
     }

@@ -1,4 +1,6 @@
 const User = require('../models/User');
+const fs = require('fs/promises');
+const path = require('path');
 class UserService {
     getAllUsers = async () => {
         try {
@@ -136,6 +138,39 @@ class UserService {
             return {
                 status: 'success',
                 message: (newUsers.length > 0 ? `${newUsers.length} người dùng mới đã được thêm.` : ' Không có người dùng mới nào được thêm.'),
+            };
+        } catch (error) {
+            return {
+                status: 'error',
+                message: error.message
+            };
+        }
+    }
+    uploadAvatar = async (userId, file) => {
+        try {
+            const user = await User.findById(userId);
+            if (!user) {
+                return {
+                    status: 'error',
+                    message: 'Người dùng không tồn tại'
+                };
+            }
+            if(user.avatar && user.avatar.startsWith('/uploads/')) {
+                // Xóa tệp cũ nếu có
+                const oldImagePath = path.join(__dirname, '../../public', user.avatar);
+                try {
+                    await fs.unlink(oldImagePath);
+                    console.log('Old image deleted successfully');
+                } catch (err) {
+                    console.error('Error deleting old image:', err.message);
+                }
+            }
+            user.avatar = `/uploads/${file.filename}`; // lưu tệp vào thư mục uploads
+            await user.save();
+            return {
+                status: 'success',
+                message: 'Tải lên ảnh đại diện thành công',
+                data: user
             };
         } catch (error) {
             return {

@@ -81,7 +81,6 @@ class SpecialtyService {
                 };
             }
             if(image && specialty.image){
-                console.log('specialty.image', specialty.image);
                 
                 const oldImagePath = path.join(__dirname, '../../public', specialty?.image);
                 try {

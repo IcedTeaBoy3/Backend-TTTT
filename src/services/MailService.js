@@ -90,5 +90,36 @@ class MailService {
             };
         }
     }
+    sendResetPasswordEmail = async (email, resetToken) => {
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.MAIL_ACCOUNT, // Tài khoản Gmail
+                pass: process.env.MAIL_PASSWORD, // Mật khẩu ứng dụng
+            }
+        });
+        const mailOptions = {
+            from: process.env.MAIL_ACCOUNT,
+            to: email,
+            subject: 'Yêu cầu đặt lại mật khẩu',
+            html: `
+                <h1>Đặt lại mật khẩu</h1>
+                <p>Vui lòng nhấp vào liên kết bên dưới để đặt lại mật khẩu của bạn:</p>
+                <a href="${process.env.CLIENT_URL}/reset-password?token=${resetToken}">Đặt lại mật khẩu</a>
+                <p>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.</p>
+            `
+        };
+
+        try {
+            await transporter.sendMail(mailOptions);
+            console.log(`✅ Đã gửi email đặt lại mật khẩu đến: ${email}`);
+        } catch (error) {
+            console.error('❌ Lỗi gửi email:', error);
+            return {
+                status: 'error',
+                message: 'Gửi email thất bại: ' + error.message
+            };
+        }
+    }
 }
 module.exports = new MailService();
