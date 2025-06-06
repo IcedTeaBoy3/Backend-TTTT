@@ -20,7 +20,8 @@ class DoctorService {
                 password: hashPassword,
                 phone,
                 address,
-                role: 'doctor'
+                role: 'doctor',
+                isVerified: true
             });
             if (!user) {
                 return {
@@ -206,7 +207,6 @@ class DoctorService {
     searchDoctors = async (data) => {
         try {
             const { keyword = '', specialty = '', pageNumber = 1, limitNumber = 10 } = data;
-            console.log('Search Doctors:', { keyword, specialty, pageNumber, limitNumber });
             const skip = (pageNumber - 1) * limitNumber;
 
             // Tạo phần $match cho tìm kiếm

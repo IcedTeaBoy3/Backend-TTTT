@@ -182,6 +182,17 @@ class AppointmentService {
                 doctor: existingAppointment.doctor,
                 schedule: data.schedule,
             })
+            // Kiểm tra nếu cùng ngày thì mới cần kiểm tra khung giờ
+            const workDate = new Date(schedule.workDate);
+            const today = new Date();
+            if (workDate < toLocalStartOfDay(today)) {
+                return {
+                    status: 'error',
+                    message: 'Ngày làm việc không hợp lệ, vui lòng chọn ngày trong tương lai',
+                };
+            }
+            
+
             // Lịch hẹn đã được đặt
             const bookedSlots = appointments.map(a => a.timeSlot);
             // Tạo danh sách khung giờ hợp lệ trong ngày mặc định ca làm việc 30p
