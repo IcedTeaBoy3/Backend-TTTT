@@ -164,5 +164,41 @@ class HospitalService {
             }
         }
     }
+    searchHospital = async (data) => {
+        try {
+            const { keyword = '',specialty ='', pageNumber = 1, limitNumber = 10 } = data;
+            const skip = (pageNumber - 1) * limitNumber;
+            const query = {};
+            if (keyword) {
+                query.$or = [
+                    { name: { $regex: keyword, $options: 'i' } },
+                    { address: { $regex: keyword, $options: 'i' } },
+                    { phone: { $regex: keyword, $options: 'i' } }
+                ];
+            }
+            // Lọc theo chuyên khoa
+            if (specialty) {
+                query.specialties = specialty; // specialty là _id
+            }
+            const [hospitals, total] = await Promise.all([
+                Hospital.find(query)
+                    .populate('specialties')
+                    .skip(skip)
+                    .limit(parseInt(limitNumber)),
+                Hospital.countDocuments(query),
+            ]);
+            return {
+                status: 'success',
+                message: 'Tìm kiếm bệnh viện thành công',
+                data: hospitals,
+                total: total
+            };
+        } catch (error) {
+            return {
+                status: 'error',
+                message: error.message
+            }
+        }
+    }
 }
 module.exports = new HospitalService();

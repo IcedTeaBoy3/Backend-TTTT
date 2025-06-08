@@ -9,5 +9,5 @@ router.get('/get-all-hospitals', HospitalController.getAllHospitals);
 router.put('/update-hospital/:id',Authenticate, Authorize(["admin"]),upload.single('image'), HospitalController.updateHospital);
 router.delete('/delete-hospital/:id',Authenticate, Authorize(["admin"]), HospitalController.deleteHospital);
 router.post('/delete-all-hospitals',Authenticate, Authorize(["admin"]), HospitalController.deleteManyHospitals);
-
+router.get('/search-hospital', HospitalController.searchHospital);
 module.exports = router;

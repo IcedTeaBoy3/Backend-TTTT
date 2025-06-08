@@ -141,5 +141,22 @@ class HospitalController {
             });
         }
     }
+    searchHospital = async (req, res) => {
+        try {
+            const { keyword, specialty, page, limit } = req.query;
+            let pageNumber = parseInt(page);
+            const limitNumber = parseInt(limit);
+            if(isNaN(pageNumber) || pageNumber < 1) {
+                pageNumber = 1;
+            }
+            const data = await HospitalService.searchHospital({keyword, specialty, pageNumber, limitNumber });
+            res.json(data);
+        } catch (error) {
+            res.status(500).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
 }
 module.exports = new HospitalController();
