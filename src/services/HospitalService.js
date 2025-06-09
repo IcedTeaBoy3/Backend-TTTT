@@ -4,14 +4,22 @@ const path = require('path');
 class HospitalService {
     createHospital = async (data) => {
         try {
-            const { name, address, phone, description, image } = data;
-            const hospital = await Hospital.create({
+            const { name, address, phone, description, image, doctors, specialties, type } = data;
+            let  dataCreate = {
                 name,
                 address,
                 phone,
                 description,
-                image
-            });
+                image,
+                type: type || 'hospital'
+            };
+            if(type !== 'clinic'){
+                dataCreate.doctors = doctors || [];
+                dataCreate.specialties = specialties || [];
+            }
+
+
+            const hospital = await Hospital.create(dataCreate);
             
             return {
                 status: 'success',
@@ -48,11 +56,26 @@ class HospitalService {
     }
     getAllHospitals = async (data) => {
         try {
-            const { pageNumber, limitNumber } = data;
+            const { pageNumber, limitNumber,type } = data;
             const skip = (pageNumber - 1) * limitNumber;
+            let query = {};
+            if (type) {
+                query.type = type; // Chỉ lấy bệnh viện hoặc phòng khám theo loại
+            }
             // Đếm tổng bản ghi
-            const total = await Hospital.countDocuments();
-            const hospitals = await Hospital.find().skip(skip).limit(limitNumber).exec();
+            const total = await Hospital.countDocuments(query);
+            const hospitals = await Hospital.find(query)
+            .skip(skip)
+            .limit(limitNumber)
+            .populate({
+                path: 'doctors',
+                populate: {
+                    path: 'user', // Nếu muốn populate tiếp từ Doctor -> User
+                    select: 'name email'
+                }
+            })
+            .populate('specialties')
+            .exec();
             return {
                 status: 'success',
                 message: 'Lấy danh sách bệnh viện thành công',
@@ -68,7 +91,7 @@ class HospitalService {
     }
     updateHospital = async (id, data) => {
         try {
-            const { name, address, phone, description, image } = data;
+            const { name, address, phone, description, image,doctors,specialties,type } = data;
             const hospital = await Hospital.findById(id);
             if (!hospital) {
                 return {
@@ -85,10 +108,11 @@ class HospitalService {
                     console.error('Error deleting old image:', err.message);
                 }
             }
-             const updateData = { name, address, phone, description };
+            const updateData = { name, address, phone, description,doctors, specialties,type };
             if (image) {
                 updateData.image = image;
             }
+
             const updatedHospital = await Hospital.findByIdAndUpdate(id, updateData, { new: true });
             return {
                 status: 'success',
@@ -180,6 +204,7 @@ class HospitalService {
             if (specialty) {
                 query.specialties = specialty; // specialty là _id
             }
+            query.type = 'hospital'; // Chỉ lấy bệnh viện, không lấy phòng khám
             const [hospitals, total] = await Promise.all([
                 Hospital.find(query)
                     .populate('specialties')

@@ -2,14 +2,16 @@ const DoctorService = require('../services/DoctorService');
 class DoctorController {
     createDoctor = async (req, res) => {
         try {
-            const { name, email, password, address, specialtyId, hospitalId, position, qualification, experience, description } = req.body;
+            console.log("req.body", req.body);
+            
+            const { name, email, password, address, specialties, hospitalId, position, qualification, experience, description } = req.body;
             const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
             const emailRegex = /\S+@\S+\.\S+/;
             const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
             const validEmail = emailRegex.test(email);
             // const validPhone = phoneRegex.test(phone);
             const validPassword = passwordRegex.test(password);
-            if (!email || !password  || !specialtyId || !hospitalId || !qualification) {
+            if (!name|| !email || !password  || !specialties || !hospitalId || !qualification) {
                 return res.status(400).json({
                     status: 'error',
                     message: 'Vui lòng điền đầy đủ thông tin'
@@ -25,12 +27,6 @@ class DoctorController {
                     message: 'Mật khẩu phải có ít nhất 6 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt'
                 });
             }
-            // } else if (!validPhone) {
-            //     return res.status(400).json({
-            //         status: 'error',
-            //         message: 'Số điện thoại không đúng định dạng'
-            //     });
-            // }
             const data = await DoctorService.createDoctor(req.body);
             res.json(data);
         } catch (error) {
@@ -43,14 +39,14 @@ class DoctorController {
     updateDoctor = async (req, res) => {
         try {
             const { id } = req.params;
-            const { name, email, phone, address, specialtyId, hospitalId, position, qualification, experience, description } = req.body;
+            const { name, email, phone, address, specialties, hospitalId, position, qualification, experience, description } = req.body;
             if (!id) {
                 return res.status(400).json({
                     status: 'error',
                     message: 'Vui lòng cung cấp id'
                 });
             }
-            if (!name || !email || !hospitalId || !specialtyId || !qualification) {
+            if (!name || !email || !hospitalId || !specialties || !qualification) {
                 return res.status(400).json({
                     status: 'error',
                     message: 'Vui lòng điền đầy đủ thông tin'

@@ -11,7 +11,10 @@ const HospitalSchema = new Schema(
     phone: { type: String, required: true },
     description: { type: String, required: true },
     image: { type: String },
-
+    type: {
+      type: String,
+      enum: ['hospital', 'clinic'],
+    }
   },
   {
     timestamps: true,

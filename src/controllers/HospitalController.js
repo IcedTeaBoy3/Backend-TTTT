@@ -4,7 +4,8 @@ class HospitalController {
     createHospital = async (req, res) => {
         try {
             const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
-            const { name, address, phone, description} = req.body;
+            
+            const { name, address, phone, description,doctors,specialties,type} = req.body;
             const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
             const phoneValid = phoneRegex.test(phone);
             if (!phoneValid) {
@@ -24,7 +25,10 @@ class HospitalController {
                 address,
                 phone,
                 description,
-                image: imagePath
+                image: imagePath,
+                doctors: doctors ? JSON.parse(doctors) : [],
+                specialties: specialties ? JSON.parse(specialties) : [],
+                type: type
             });
             res.json(data);
         } catch (error) {
@@ -54,10 +58,10 @@ class HospitalController {
     }
     getAllHospitals = async (req, res) => {
         try {
-            const { page, limit } = req.query;
+            const { page, limit,type } = req.query;
             const pageNumber = parseInt(page) || 1;
             const limitNumber = parseInt(limit) || 10;
-            const data = await HospitalService.getAllHospitals({pageNumber, limitNumber});
+            const data = await HospitalService.getAllHospitals({pageNumber, limitNumber,type});
             res.json(data);
         } catch (error) {
             res.status(500).json({
@@ -70,7 +74,7 @@ class HospitalController {
         try {
             const id = req.params.id;
             const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
-            const { name, address, phone, description} = req.body;
+            const { name, address, phone, description, doctors, specialties, type} = req.body;
             const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
             const phoneValid = phoneRegex.test(phone);
             if (!id) {
@@ -95,7 +99,10 @@ class HospitalController {
                 address,
                 phone,
                 description,
-                image: imagePath
+                image: imagePath,
+                doctors: doctors ? JSON.parse(doctors) : [],
+                specialties: specialties ? JSON.parse(specialties) : [],
+                type
             });
             res.json(data);
         } catch (error) {

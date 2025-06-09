@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 class DoctorService {
     createDoctor = async (data) => {
         try {
-            const { name, email, password, phone, address, specialtyId, hospitalId, position, qualification ,experience , description} = data;
+            const { name, email, password, phone, address, specialties, hospitalId, position, qualification ,experience , description} = data;
             const hashPassword = await bcrypt.hash(password, 10);
             const existingUser = await User.findOne({ email: email });
             if (existingUser) {
@@ -31,7 +31,7 @@ class DoctorService {
             }
             const doctor = await Doctor.create({
                 user: user._id,
-                specialty: specialtyId,
+                specialties: JSON.parse(specialties) || [],
                 hospital: hospitalId,
                 position,
                 qualification,
@@ -54,7 +54,7 @@ class DoctorService {
                 email,
                 phone,
                 address,
-                specialtyId,
+                specialties,
                 hospitalId,
                 position,
                 qualification,
@@ -98,7 +98,7 @@ class DoctorService {
             await user.save();
 
             // Cập nhật doctor
-            doctor.specialty = specialtyId;
+            doctor.specialties = JSON.parse(specialties) || [];
             doctor.hospital = hospitalId;
             doctor.position = position;
             doctor.qualification = qualification;
@@ -144,7 +144,7 @@ class DoctorService {
             const skip = (page - 1) * limit;
             const doctors = await Doctor.find()
                 .populate('user', 'name email phone address')
-                .populate('specialty', 'name')
+                .populate('specialties', 'name')
                 .populate('hospital', 'name')
                 .skip(skip)
                 .limit(limit);
@@ -163,7 +163,7 @@ class DoctorService {
         try {
             const doctor = await Doctor.findById(id)
                 .populate('user')
-                .populate('specialty')
+                .populate('specialties')
                 .populate('hospital');
             if (!doctor) {
                 return {
@@ -207,28 +207,28 @@ class DoctorService {
     searchDoctors = async (data) => {
         try {
             const { keyword = '', specialty = '', pageNumber = 1, limitNumber = 10 } = data;
+            
             const skip = (pageNumber - 1) * limitNumber;
 
             // Tạo phần $match cho tìm kiếm
             const matchConditions = [
                 { 'user.name': { $regex: keyword, $options: 'i' } },
-                { 'specialty.name': { $regex: keyword, $options: 'i' } },
-                { 'hospital.name': { $regex: keyword, $options: 'i' } },
+                { 'specialties.name': { $regex: keyword, $options: 'i' } },
+                { 'hospital.address': { $regex: keyword, $options: 'i' } },
                 { 'description': { $regex: keyword, $options: 'i' } },
                 { 'qualification': { $regex: keyword, $options: 'i' } },
+                { 'position': { $regex: keyword, $options: 'i' } },
+                { 'experience': { $regex: keyword, $options: 'i' } }
             ];
 
             // Nếu có truyền specialty ID, thêm điều kiện lọc
-            const matchQuery = {
+           const matchQuery = {
                 $and: [
-                    { $or: matchConditions },
+                    { $or: matchConditions }
                 ]
             };
 
-            if (specialty) {
-                matchQuery.$and.push({ 'specialty._id': new mongoose.Types.ObjectId(specialty) });
-            }
-
+           
             // Pipeline chung
             const commonPipeline = [
                 {
@@ -243,12 +243,11 @@ class DoctorService {
                 {
                     $lookup: {
                         from: 'specialties',
-                        localField: 'specialty',
+                        localField: 'specialties',
                         foreignField: '_id',
-                        as: 'specialty',
+                        as: 'specialties',
                     },
                 },
-                { $unwind: '$specialty' },
                 {
                     $lookup: {
                         from: 'hospitals',
@@ -260,6 +259,12 @@ class DoctorService {
                 { $unwind: '$hospital' },
                 { $match: matchQuery },
             ];
+             if (specialty && mongoose.Types.ObjectId.isValid(specialty)) {
+                matchQuery.$and.push({
+                    'specialties._id': new mongoose.Types.ObjectId(specialty)
+                });
+            }
+
 
             // Lấy danh sách bác sĩ
             const doctors = await Doctor.aggregate([
