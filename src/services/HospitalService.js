@@ -33,7 +33,21 @@ class HospitalService {
     }
     getHospital = async (id) => {
         try {
-            const hospital = await Hospital.findById(id).populate('specialties','name');
+            const hospital = await Hospital.findById(id)
+                .populate('specialties', 'name description image')
+                .populate({
+                    path: 'doctors',
+                    populate: [
+                        {
+                            path: 'user',
+                            select: 'name email phone address image'
+                        },
+                        {
+                            path: 'specialties',
+                            select: 'name description image'
+                        }
+                    ]
+                });
             if (!hospital) {
                 return {
                     status: 'error',
@@ -259,17 +273,32 @@ class HospitalService {
             const hospital = await Hospital.findById(hospitalId)
                 .populate({
                     path: 'doctors',
-                    populate: {
-                        path: 'user', // Nếu muốn populate tiếp từ Doctor -> User
-                        select: 'name image'
-                    }
+                    populate: [
+                        {
+                            path: 'user',
+                            select: 'name email phone address image'
+                        
+                        },
+                        {
+                            path: 'specialties',
+                            select: 'name description image'
+                        }
+                    ]
                 })
 
-            if(!hospital || !hospital.doctors || hospital.doctors.length === 0) {
+            if (!hospital) {
                 return {
                     status: 'error',
                     message: 'Bệnh viện không tồn tại'
-                }
+                };
+            }
+
+            if (!hospital.doctors || hospital.doctors.length === 0) {
+                return {
+                    status: 'success',
+                    message: 'Bệnh viện chưa có bác sĩ nào',
+                    data: []
+                };
             }
             return {
                 status: 'success',
