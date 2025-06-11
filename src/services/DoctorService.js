@@ -163,7 +163,7 @@ class DoctorService {
         try {
             const doctor = await Doctor.findById(id)
                 .populate('user')
-                .populate('specialties')
+                .populate('specialties', 'name')
                 .populate('hospital');
             if (!doctor) {
                 return {

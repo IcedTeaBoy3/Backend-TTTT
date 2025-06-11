@@ -3,7 +3,8 @@ const HospitalService = require('../services/HospitalService');
 class HospitalController {
     createHospital = async (req, res) => {
         try {
-            const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+            const thumbnailPath = req.files['thumbnail'] ? `/uploads/${req.files['thumbnail'][0].filename}` : null;
+            const imagesPath = req.files['images'] ? req.files['images'].map(file => `/uploads/${file.filename}`) : [];
             
             const { name, address, phone, description,doctors,specialties,type} = req.body;
             const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
@@ -25,7 +26,8 @@ class HospitalController {
                 address,
                 phone,
                 description,
-                image: imagePath,
+                images: imagesPath,
+                thumbnail: thumbnailPath,
                 doctors: doctors ? JSON.parse(doctors) : [],
                 specialties: specialties ? JSON.parse(specialties) : [],
                 type: type
@@ -73,7 +75,9 @@ class HospitalController {
     updateHospital = async (req, res) => {
         try {
             const id = req.params.id;
-            const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+            const thumbnailPath = req.files['thumbnail'] ? `/uploads/${req.files['thumbnail'][0].filename}` : null;
+            const imagesPath = req.files['images'] ? req.files['images'].map(file => `/uploads/${file.filename}`) : [];
+
             const { name, address, phone, description, doctors, specialties, type} = req.body;
             const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
             const phoneValid = phoneRegex.test(phone);
@@ -99,7 +103,8 @@ class HospitalController {
                 address,
                 phone,
                 description,
-                image: imagePath,
+                thumbnail: thumbnailPath,
+                images: imagesPath,
                 doctors: doctors ? JSON.parse(doctors) : [],
                 specialties: specialties ? JSON.parse(specialties) : [],
                 type
@@ -157,6 +162,24 @@ class HospitalController {
                 pageNumber = 1;
             }
             const data = await HospitalService.searchHospital({keyword, specialty, pageNumber, limitNumber });
+            res.json(data);
+        } catch (error) {
+            res.status(500).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
+    getAllDoctorsHospital = async (req, res) => {
+        try {
+            const id = req.params.id;
+            if (!id) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Vui lòng cung cấp id bệnh viện'
+                });
+            }
+            const data = await HospitalService.getAllDoctorsHospital(id);
             res.json(data);
         } catch (error) {
             res.status(500).json({

@@ -77,6 +77,7 @@ class WorkingScheduleService {
     }
     getWorkingScheduleByDoctor = async (doctorId) => {
         try {
+            
             // Kiểm tra xem lịch có nhỏ hơn ngày hiện tại không
             const today = new Date();
             today.setHours(0, 0, 0, 0); // Đặt giờ, phút, giây về 0 để so sánh theo ngày

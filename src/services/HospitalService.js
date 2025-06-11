@@ -1,23 +1,21 @@
 const Hospital = require('../models/Hospital');
-const fs = require('fs/promises');
+const {deleteFile} = require('../utils/deleteFile');
 const path = require('path');
 class HospitalService {
     createHospital = async (data) => {
         try {
-            const { name, address, phone, description, image, doctors, specialties, type } = data;
-            let  dataCreate = {
+            const { name, address, phone, description, thumbnail, images, doctors, specialties, type } = data;
+            let dataCreate = {
                 name,
                 address,
                 phone,
                 description,
-                image,
-                type: type || 'hospital'
+                thumbnail,
+                images,
+                type: type,
+                doctors,
+                specialties
             };
-            if(type !== 'clinic'){
-                dataCreate.doctors = doctors || [];
-                dataCreate.specialties = specialties || [];
-            }
-
 
             const hospital = await Hospital.create(dataCreate);
             
@@ -35,7 +33,7 @@ class HospitalService {
     }
     getHospital = async (id) => {
         try {
-            const hospital = await Hospital.findById(id);
+            const hospital = await Hospital.findById(id).populate('specialties','name');
             if (!hospital) {
                 return {
                     status: 'error',
@@ -91,7 +89,7 @@ class HospitalService {
     }
     updateHospital = async (id, data) => {
         try {
-            const { name, address, phone, description, image,doctors,specialties,type } = data;
+            const { name, address, phone, description, thumbnail, images,doctors,specialties,type } = data;
             const hospital = await Hospital.findById(id);
             if (!hospital) {
                 return {
@@ -99,20 +97,30 @@ class HospitalService {
                     message: 'Bệnh viện không tồn tại'
                 }
             }
-            if(image && hospital.image){
-                const oldImagePath = path.join(__dirname, '../../public', hospital.image);
-                try {
-                    await fs.unlink(oldImagePath);
-                    console.log('Old image deleted successfully');
-                } catch (err) {
-                    console.error('Error deleting old image:', err.message);
-                }
+            // Xoá ảnh cũ nếu có
+            const basePath = path.join(__dirname, '../../public');
+            const deleteTasks = [];
+            if(thumbnail && hospital.thumbnail && thumbnail !== hospital.thumbnail) {
+                const thumbnailPath = path.join(basePath, hospital.thumbnail);
+                deleteTasks.push(deleteFile(thumbnailPath));
             }
-            const updateData = { name, address, phone, description,doctors, specialties,type };
-            if (image) {
-                updateData.image = image;
+            console.log('images', images);
+            console.log('hospital.images', hospital.images);
+            if (Array.isArray(images) && Array.isArray(hospital.images)) {
+                const removedImages = hospital.images.filter(old => !images.includes(old));
+                removedImages.forEach(image => {
+                    const imagePath = path.join(basePath, image);
+                    deleteTasks.push(deleteFile(imagePath));
+                });
             }
 
+            const updateData = { name, address, phone, description,doctors, specialties,type };
+            if (thumbnail) updateData.thumbnail = thumbnail;
+            if (Array.isArray(images)) updateData.images = images;
+
+            // Chờ tất cả các tác vụ xoá ảnh hoàn thành hoặc dừng nếu có 1 cái thất bại
+            await Promise.all(deleteTasks);
+            // Cập nhật bệnh viện
             const updatedHospital = await Hospital.findByIdAndUpdate(id, updateData, { new: true });
             return {
                 status: 'success',
@@ -129,15 +137,28 @@ class HospitalService {
     deleteHospital = async (id) => {
         try {
             const hospital = await Hospital.findById(id);
-            if (hospital && hospital.image) {
-                const oldImagePath = path.join(__dirname, '../../public', hospital.image);
-                try {
-                    await fs.unlink(oldImagePath);
-                    console.log('Old image deleted successfully');
-                } catch (err) {
-                    console.error('Error deleting old image:', err.message);
+            if(!hospital){
+                return {
+                    status: 'error',
+                    message: 'Bệnh viện không tồn tại'
                 }
             }
+            const basePath = path.join(__dirname, '../../public');
+            const deleteTasks = [];
+            // Xoá ảnh đại diện
+            if(hospital.thumbnail){
+                const thumbnailPath = path.join(basePath, hospital.thumbnail);
+                deleteTasks.push(deleteFile(thumbnailPath));
+            }
+            // Xoá các ảnh khác
+            if(Array.isArray(hospital.images) && hospital.images.length > 0) {
+                hospital.images.forEach(image => {
+                    const imagePath = path.join(basePath, image);
+                    deleteTasks.push(deleteFile(imagePath));
+                });
+            }
+            // Chờ tất cả các tác vụ xoá ảnh hoàn thành hoặc dừng nếu có 1 cái thất bại
+            await Promise.all(deleteTasks);
             // Xóa bệnh viện
             await Hospital.findByIdAndDelete(id);
             
@@ -161,18 +182,26 @@ class HospitalService {
                     message: 'Bệnh viện không tồn tại'
                 }
             }
+            const basePath = path.join(__dirname, '../../public');
+            // Tạo mảng các tác vụ xoá ảnh
+            const deleteTasks = [];
             // Xóa ảnh của các bệnh viện
             hospitals.forEach(async (hospital) => {
-                if (hospital.image) {
-                    const oldImagePath = path.join(__dirname, '../../public', hospital.image);
-                    try {
-                        await fs.unlink(oldImagePath);
-                        console.log('Old image deleted successfully');
-                    } catch (err) {
-                        console.error('Error deleting old image:', err.message);
-                    }
+                // Xoá ảnh đại diện
+                if (hospital.thumbnail) {
+                    const thumbnailPath = path.join(basePath, hospital.thumbnail);
+                    deleteTasks.push(deleteFile(thumbnailPath));
                 }
+                // Xoá các ảnh khác
+                if (Array.isArray(hospital.images) && hospital.images.length > 0) {
+                    hospital.images.forEach(image => {
+                        const imagePath = path.join(basePath, image);
+                        deleteTasks.push(deleteFile(imagePath));
+                    });
+                }
+                await Promise.all(deleteTasks);
             });
+
             // Xóa các bệnh viện
             await Hospital.deleteMany({ _id: { $in: ids } });
 
@@ -204,7 +233,7 @@ class HospitalService {
             if (specialty) {
                 query.specialties = specialty; // specialty là _id
             }
-            query.type = 'hospital'; // Chỉ lấy bệnh viện, không lấy phòng khám
+            query.type = 'clinic'; // Chỉ tìm kiếm phòng khám
             const [hospitals, total] = await Promise.all([
                 Hospital.find(query)
                     .populate('specialties')
@@ -217,6 +246,35 @@ class HospitalService {
                 message: 'Tìm kiếm bệnh viện thành công',
                 data: hospitals,
                 total: total
+            };
+        } catch (error) {
+            return {
+                status: 'error',
+                message: error.message
+            }
+        }
+    }
+    getAllDoctorsHospital = async (hospitalId) => {
+        try {
+            const hospital = await Hospital.findById(hospitalId)
+                .populate({
+                    path: 'doctors',
+                    populate: {
+                        path: 'user', // Nếu muốn populate tiếp từ Doctor -> User
+                        select: 'name image'
+                    }
+                })
+
+            if(!hospital || !hospital.doctors || hospital.doctors.length === 0) {
+                return {
+                    status: 'error',
+                    message: 'Bệnh viện không tồn tại'
+                }
+            }
+            return {
+                status: 'success',
+                message: 'Lấy danh sách bác sĩ của bệnh viện thành công',
+                data: hospital.doctors
             };
         } catch (error) {
             return {

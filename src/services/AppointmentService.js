@@ -64,10 +64,10 @@ class AppointmentService {
                     path: 'doctor',
                     populate: [
                         { path: 'user', select: 'name email' },
-                        { path: 'specialty', select: 'name description' },
+                        { path: 'specialties', select: 'name description' },
                         { path: 'hospital', select: 'name address' }
                     ],
-                    select: 'user specialty hospital'
+                    select: 'user specialties hospital'
                 },
                 { path: 'schedule', select: 'workDate startTime endTime' }
             ]);
@@ -121,10 +121,10 @@ class AppointmentService {
                 .populate('patient', 'name')
                 .populate({
                     path: 'doctor',
-                    select: 'user specialty',
+                    select: 'user specialties',
                     populate: [
                         { path: 'user', select: 'name email' },
-                        { path: 'specialty', select: 'name description' },
+                        { path: 'specialties', select: 'name description' },
                     ]
                 })
                 .populate('schedule', 'workDate startTime endTime')
@@ -261,10 +261,10 @@ class AppointmentService {
             const appointments = await Appointment.find({ patient: patientId})
                 .populate({
                     path: 'doctor',
-                    select: 'user specialty hospital',
+                    select: 'user specialties hospital',
                     populate: [
                         { path: 'user', select: 'name' },
-                        { path: 'specialty', select: 'name' },
+                        { path: 'specialties', select: 'name' },
                         { path: 'hospital', select: 'name address' }
                     ]
                 })
