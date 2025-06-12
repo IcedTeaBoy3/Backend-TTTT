@@ -247,7 +247,7 @@ class HospitalService {
             if (specialty) {
                 query.specialties = specialty; // specialty là _id
             }
-            query.type = 'clinic'; // Chỉ tìm kiếm phòng khám
+            query.type = 'hospital'; // Chỉ lấy bệnh viện, không lấy phòng khám
             const [hospitals, total] = await Promise.all([
                 Hospital.find(query)
                     .populate('specialties')

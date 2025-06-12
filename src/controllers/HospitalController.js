@@ -75,48 +75,47 @@ class HospitalController {
     updateHospital = async (req, res) => {
         try {
             const id = req.params.id;
-            const thumbnailPath = req.files['thumbnail'] ? `/uploads/${req.files['thumbnail'][0].filename}` : null;
-            const imagesPath = req.files['images'] ? req.files['images'].map(file => `/uploads/${file.filename}`) : [];
+            const thumbnailPath = req.files['thumbnail'] ? `/uploads/${req.files['thumbnail'][0].filename}` : undefined;
+            const imagesPath = req.files['images'] ? req.files['images'].map(file => `/uploads/${file.filename}`) : undefined;
 
-            const { name, address, phone, description, doctors, specialties, type} = req.body;
+            const { name, address, phone, description, doctors, specialties, type } = req.body;
+
             const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
-            const phoneValid = phoneRegex.test(phone);
             if (!id) {
-                return res.status(400).json({
-                    status: 'error',
-                    message: 'Vui lòng cung cấp id bệnh viện'
-                });
+                return res.status(400).json({ status: 'error', message: 'Vui lòng cung cấp id bệnh viện' });
             }
             if (!name || !address || !phone || !description) {
-                return res.status(400).json({
-                    status: 'error',
-                    message: 'Vui lòng điền đầy đủ thông tin bệnh viện'
-                });
-            } else if (!phoneValid) {
-                return res.status(400).json({
-                    status: 'error',
-                    message: 'Số điện thoại không đúng định dạng'
-                });
+                return res.status(400).json({ status: 'error', message: 'Vui lòng điền đầy đủ thông tin bệnh viện' });
             }
-            const data = await HospitalService.updateHospital(id,{
+            if (!phoneRegex.test(phone)) {
+                return res.status(400).json({ status: 'error', message: 'Số điện thoại không đúng định dạng' });
+            }
+
+            const updatePayload = {
                 name,
                 address,
                 phone,
                 description,
-                thumbnail: thumbnailPath,
-                images: imagesPath,
                 doctors: doctors ? JSON.parse(doctors) : [],
                 specialties: specialties ? JSON.parse(specialties) : [],
                 type
-            });
+            };
+
+            if (typeof thumbnailPath !== 'undefined') {
+                updatePayload.thumbnail = thumbnailPath;
+            }
+
+            if (typeof imagesPath !== 'undefined') {
+                updatePayload.images = imagesPath;
+            }
+
+            const data = await HospitalService.updateHospital(id, updatePayload);
             res.json(data);
         } catch (error) {
-            res.status(500).json({
-                status: 'error',
-                message: error.message
-            });
+            res.status(500).json({ status: 'error', message: error.message });
         }
     }
+
     deleteHospital = async (req, res) => {
         try {
             const id = req.params.id;
