@@ -2,8 +2,8 @@ const AppointmentService = require('../services/AppointmentService');
 class AppointmentController {
     createAppointment = async (req, res) => {
         try {
-            const { patientId, doctorId, scheduleId, timeSlot,reason } = req.body;
-            if (!patientId || !doctorId || !scheduleId || !timeSlot || !reason) {
+            const { patientId, doctorId, scheduleId, specialtyId, timeSlot,reason } = req.body;
+            if (!patientId || !doctorId || !scheduleId || !specialtyId ||!timeSlot || !reason) {
                 return res.status(400).json({ 
                     status: 'error',
                     message: 'Vui lòng điền đầy đủ thông tin' 
@@ -13,6 +13,7 @@ class AppointmentController {
                 patient: patientId,
                 doctor: doctorId,
                 schedule: scheduleId,
+                specialty: specialtyId,
                 timeSlot,
                 reason
             };
@@ -64,8 +65,8 @@ class AppointmentController {
     updateAppointment = async (req, res) => {
         try {
             const { id } = req.params;
-            const { patientId, doctorId, scheduleId, timeSlot, reason } = req.body;
-            if (!id || !patientId || !doctorId || !scheduleId || !timeSlot || !reason) {
+            const { patientId, doctorId, scheduleId, specialtyId, timeSlot, reason } = req.body;
+            if (!id || !patientId || !doctorId || !scheduleId || !specialtyId || !timeSlot || !reason) {
                 return res.status(400).json({ 
                     status: 'error', 
                     message: 'Vui lòng điền đầy đủ thông tin' 
@@ -75,6 +76,7 @@ class AppointmentController {
                 patient: patientId,
                 doctor: doctorId,
                 schedule: scheduleId,
+                specialty: specialtyId,
                 timeSlot,
                 reason
             };

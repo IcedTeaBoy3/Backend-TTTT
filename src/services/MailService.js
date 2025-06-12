@@ -45,6 +45,7 @@ class MailService {
             patientName,
             doctorName,
             addressHospital,
+            specialtyName,
             scheduleDate,
             timeSlot,
             reason,
@@ -69,6 +70,7 @@ class MailService {
                         <li><strong>Ngày khám:</strong> ${formattedDate}</li>
                         <li><strong>Khung giờ:</strong> ${timeSlot}-${addMinutesToTime(timeSlot, 30)}</li>
                         <li><strong>Địa chỉ phòng khám:</strong> ${addressHospital}</li>
+                        <li><strong>Chuyên khoa:</strong> ${specialtyName}</li>
                         <li><strong>Lý do khám:</strong> ${reason || 'Không có ghi chú'}</li>
                     </ul>
                     <p>Vui lòng đến đúng giờ và mang theo các giấy tờ cần thiết nếu có.</p>

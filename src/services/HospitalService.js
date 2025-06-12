@@ -4,7 +4,7 @@ const path = require('path');
 class HospitalService {
     createHospital = async (data) => {
         try {
-            const { name, address, phone, description, thumbnail, images, doctors, specialties, type } = data;
+            const { name, address, phone, description, thumbnail, images, doctors, type } = data;
             let dataCreate = {
                 name,
                 address,
@@ -14,7 +14,6 @@ class HospitalService {
                 images,
                 type: type,
                 doctors,
-                specialties
             };
 
             const hospital = await Hospital.create(dataCreate);
@@ -34,10 +33,10 @@ class HospitalService {
     getHospital = async (id) => {
         try {
             const hospital = await Hospital.findById(id)
-                .populate('specialties', 'name description image')
                 .populate({
                     path: 'doctors',
-                    populate: [
+                    populate: 
+                    [
                         {
                             path: 'user',
                             select: 'name email phone address image'
@@ -46,7 +45,7 @@ class HospitalService {
                             path: 'specialties',
                             select: 'name description image'
                         }
-                    ]
+                    ]  
                 });
             if (!hospital) {
                 return {
@@ -86,7 +85,6 @@ class HospitalService {
                     select: 'name email'
                 }
             })
-            .populate('specialties')
             .exec();
             return {
                 status: 'success',
@@ -103,7 +101,7 @@ class HospitalService {
     }
     updateHospital = async (id, data) => {
         try {
-            const { name, address, phone, description, thumbnail, images,doctors,specialties,type } = data;
+            const { name, address, phone, description, thumbnail, images,doctors,type } = data;
             const hospital = await Hospital.findById(id);
             if (!hospital) {
                 return {
@@ -118,8 +116,6 @@ class HospitalService {
                 const thumbnailPath = path.join(basePath, hospital.thumbnail);
                 deleteTasks.push(deleteFile(thumbnailPath));
             }
-            console.log('images', images);
-            console.log('hospital.images', hospital.images);
             if (Array.isArray(images) && Array.isArray(hospital.images)) {
                 const removedImages = hospital.images.filter(old => !images.includes(old));
                 removedImages.forEach(image => {
@@ -128,7 +124,7 @@ class HospitalService {
                 });
             }
 
-            const updateData = { name, address, phone, description,doctors, specialties,type };
+            const updateData = { name, address, phone, description,doctors,type };
             if (thumbnail) updateData.thumbnail = thumbnail;
             if (Array.isArray(images)) updateData.images = images;
 
@@ -233,34 +229,71 @@ class HospitalService {
     }
     searchHospital = async (data) => {
         try {
-            const { keyword = '',specialty ='', pageNumber = 1, limitNumber = 10 } = data;
+            const { keyword = '', specialty = '', pageNumber = 1, limitNumber = 10 } = data;
             const skip = (pageNumber - 1) * limitNumber;
-            const query = {};
+
+            const matchStage = {
+                type: 'hospital',
+            };
+
             if (keyword) {
-                query.$or = [
-                    { name: { $regex: keyword, $options: 'i' } },
-                    { address: { $regex: keyword, $options: 'i' } },
-                    { phone: { $regex: keyword, $options: 'i' } }
-                ];
+            matchStage.$or = [
+                { name: { $regex: keyword, $options: 'i' } },
+                { address: { $regex: keyword, $options: 'i' } },
+                { phone: { $regex: keyword, $options: 'i' } }
+            ];
             }
-            // Lọc theo chuyên khoa
-            if (specialty) {
-                query.specialties = specialty; // specialty là _id
-            }
-            query.type = 'hospital'; // Chỉ lấy bệnh viện, không lấy phòng khám
-            const [hospitals, total] = await Promise.all([
-                Hospital.find(query)
-                    .populate('specialties')
-                    .skip(skip)
-                    .limit(parseInt(limitNumber)),
-                Hospital.countDocuments(query),
-            ]);
+
+            const pipeline = [
+            { $match: matchStage },
+            {
+                $lookup: {
+                    from: 'doctors',
+                    localField: 'doctors',
+                    foreignField: '_id',
+                    as: 'doctorDetails'
+                }
+            },
+            specialty
+                ? {
+                    $match: {
+                        'doctorDetails.specialties': { $in: [specialty] }
+                    }
+                }
+                : null,
+            { $skip: skip },
+            { $limit: parseInt(limitNumber) },
+            ];
+
+            const filteredPipeline = pipeline.filter(stage => stage !== null);
+            const hospitals = await Hospital.aggregate(filteredPipeline);
+            const total = await Hospital.aggregate([
+                { $match: matchStage },
+                {
+                    $lookup: {
+                    from: 'doctors',
+                    localField: 'doctors',
+                    foreignField: '_id',
+                    as: 'doctorDetails'
+                    }
+                },
+                specialty
+                    ? {
+                        $match: {
+                        'doctorDetails.specialties': { $in: [specialty] }
+                        }
+                    }
+                    : null,
+                { $count: 'count' },
+                ].filter(stage => stage !== null));
+
             return {
                 status: 'success',
                 message: 'Tìm kiếm bệnh viện thành công',
                 data: hospitals,
-                total: total
+                total: total[0]?.count || 0
             };
+
         } catch (error) {
             return {
                 status: 'error',
@@ -273,17 +306,18 @@ class HospitalService {
             const hospital = await Hospital.findById(hospitalId)
                 .populate({
                     path: 'doctors',
-                    populate: [
-                        {
-                            path: 'user',
-                            select: 'name email phone address image'
-                        
-                        },
-                        {
-                            path: 'specialties',
-                            select: 'name description image'
-                        }
-                    ]
+                    populate: 
+                        [    
+                            {
+                                path: 'user',
+                                select: 'name email phone address image'
+                            
+                            },
+                            {
+                                path: 'specialties',
+                                select: 'name description image'
+                            }
+                        ]
                 })
 
             if (!hospital) {

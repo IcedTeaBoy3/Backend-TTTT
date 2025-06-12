@@ -52,6 +52,7 @@ class AppointmentService {
                 patient: data.patient,
                 doctor: data.doctor,
                 schedule: data.schedule,
+                specialty: data.specialty,
                 timeSlot: data.timeSlot,
                 reason: data.reason,
                 stt: appointments.length + 1, // Số thứ tự của lịch hẹn
@@ -64,12 +65,12 @@ class AppointmentService {
                     path: 'doctor',
                     populate: [
                         { path: 'user', select: 'name email' },
-                        { path: 'specialties', select: 'name description' },
                         { path: 'hospital', select: 'name address' }
                     ],
                     select: 'user specialties hospital'
                 },
-                { path: 'schedule', select: 'workDate startTime endTime' }
+                { path: 'schedule', select: 'workDate startTime endTime' },
+                { path: 'specialty', select: 'name description' }
             ]);
 
             // Kiểm tra dữ liệu trước khi dùng
@@ -77,17 +78,19 @@ class AppointmentService {
             const patientName = populatedAppointment?.patient?.name;
             const doctorName = populatedAppointment?.doctor?.user?.name;
             const hospitalAddress = populatedAppointment?.doctor?.hospital?.address;
+            const specialtyName = populatedAppointment?.specialty?.name;
             const scheduleDate = populatedAppointment?.schedule?.workDate;
             const timeSlot = populatedAppointment?.timeSlot;
             const reason = populatedAppointment?.reason;
             const stt = populatedAppointment?.stt;
 
             // Gửi email nếu dữ liệu hợp lệ
-            if (patientEmail && doctorName && hospitalAddress && scheduleDate && stt) {
+            if (patientEmail && doctorName && hospitalAddress && scheduleDate && stt && specialtyName) {
                 await MailService.sendBookingSuccessEmail(patientEmail, {
                     patientName,
                     doctorName,
                     addressHospital: hospitalAddress,
+                    specialtyName,
                     scheduleDate,
                     timeSlot,
                     reason,
@@ -128,6 +131,7 @@ class AppointmentService {
                     ]
                 })
                 .populate('schedule', 'workDate startTime endTime')
+                .populate('specialty', 'name description')
                 .sort({ createdAt: -1 })
                 .lean(); // ⚡️ tối ưu hiệu suất đọc
 
