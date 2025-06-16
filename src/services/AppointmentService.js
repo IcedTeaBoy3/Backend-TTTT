@@ -53,6 +53,8 @@ class AppointmentService {
                 doctor: data.doctor,
                 schedule: data.schedule,
                 specialty: data.specialty,
+                hospital: data.hospital,
+                type: data.type, 
                 timeSlot: data.timeSlot,
                 reason: data.reason,
                 stt: appointments.length + 1, // Số thứ tự của lịch hẹn
@@ -70,14 +72,15 @@ class AppointmentService {
                     select: 'user specialties hospital'
                 },
                 { path: 'schedule', select: 'workDate startTime endTime' },
-                { path: 'specialty', select: 'name description' }
+                { path: 'specialty', select: 'name description' },
+                { path: 'hospital', select: 'name address' }
             ]);
 
             // Kiểm tra dữ liệu trước khi dùng
             const patientEmail = populatedAppointment?.patient?.email;
             const patientName = populatedAppointment?.patient?.name;
             const doctorName = populatedAppointment?.doctor?.user?.name;
-            const hospitalAddress = populatedAppointment?.doctor?.hospital?.address;
+            const hospitalAddress = data.type === 'hospital' ? populatedAppointment?.hospital?.address : populatedAppointment?.doctor?.hospital?.address;
             const specialtyName = populatedAppointment?.specialty?.name;
             const scheduleDate = populatedAppointment?.schedule?.workDate;
             const timeSlot = populatedAppointment?.timeSlot;
@@ -131,6 +134,7 @@ class AppointmentService {
                     ]
                 })
                 .populate('schedule', 'workDate startTime endTime')
+                .populate('hospital', 'name address')
                 .populate('specialty', 'name description')
                 .sort({ createdAt: -1 })
                 .lean(); // ⚡️ tối ưu hiệu suất đọc
@@ -268,13 +272,14 @@ class AppointmentService {
                     select: 'user specialties hospital',
                     populate: [
                         { path: 'user', select: 'name' },
-                        { path: 'specialties', select: 'name' },
                         { path: 'hospital', select: 'name address' }
                     ]
                 })
                 .skip(skip)
                 .limit(limit)
                 .populate('patient', 'name')
+                .populate('specialty', 'name description')
+                .populate('hospital', 'name address')
                 .populate('schedule', 'workDate startTime endTime')
                 .sort({ createdAt: -1 })
                 .lean();

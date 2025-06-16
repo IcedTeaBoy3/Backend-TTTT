@@ -1,6 +1,7 @@
 const Hospital = require('../models/Hospital');
 const {deleteFile} = require('../utils/deleteFile');
 const path = require('path');
+const mongoose = require('mongoose');
 class HospitalService {
     createHospital = async (data) => {
         try {
@@ -228,79 +229,182 @@ class HospitalService {
         }
     }
     searchHospital = async (data) => {
-        try {
-            const { keyword = '', specialty = '', pageNumber = 1, limitNumber = 10 } = data;
-            const skip = (pageNumber - 1) * limitNumber;
+    try {
+        let { keyword = '', specialty = '', pageNumber = 1, limitNumber = 10 } = data;
+        const skip = (pageNumber - 1) * limitNumber;
 
-            const matchStage = {
-                type: 'hospital',
-            };
+        // Kiểm tra và chuyển specialty thành ObjectId nếu hợp lệ
+        if (specialty) {
+            try {
+                specialty = new mongoose.Types.ObjectId(specialty);
+            } catch (err) {
+                return {
+                status: 'error',
+                message: 'ID chuyên khoa không hợp lệ'
+                };
+            }
+        }
 
-            if (keyword) {
+        const matchStage = {
+            type: 'hospital'
+        };
+
+        if (keyword) {
             matchStage.$or = [
                 { name: { $regex: keyword, $options: 'i' } },
                 { address: { $regex: keyword, $options: 'i' } },
-                { phone: { $regex: keyword, $options: 'i' } }
+                { phone: { $regex: keyword, $options: 'i' } },
+                { description: { $regex: keyword, $options: 'i' } }
             ];
-            }
+        }
 
-            const pipeline = [
+        const pipeline = [
             { $match: matchStage },
+
+            // Lấy thông tin bác sĩ
             {
                 $lookup: {
-                    from: 'doctors',
-                    localField: 'doctors',
-                    foreignField: '_id',
-                    as: 'doctorDetails'
+                from: 'doctors',
+                localField: 'doctors',
+                foreignField: '_id',
+                as: 'doctorDetails'
                 }
             },
+
+            // Tách mảng doctorDetails để dễ match specialty
+            { $unwind: '$doctorDetails' },
+
+            // Nếu có lọc chuyên khoa
             specialty
                 ? {
                     $match: {
-                        'doctorDetails.specialties': { $in: [specialty] }
+                    'doctorDetails.specialties': specialty
                     }
                 }
                 : null,
+
+            // Lấy thông tin user (bác sĩ)
+            {
+                $lookup: {
+                from: 'users',
+                localField: 'doctorDetails.user',
+                foreignField: '_id',
+                as: 'doctorUser'
+                }
+            },
+            { $unwind: '$doctorUser' },
+
+            // Lấy thông tin chuyên khoa (nếu cần dùng để tìm theo keyword)
+            {
+                $lookup: {
+                from: 'specialties',
+                localField: 'doctorDetails.specialties',
+                foreignField: '_id',
+                as: 'specialtyDetails'
+                }
+            },
+
+        // Nếu có keyword để tìm theo tên chuyên khoa
+            keyword
+                ? {
+                    $match: {
+                    $or: [
+                        { name: { $regex: keyword, $options: 'i' } },
+                        { address: { $regex: keyword, $options: 'i' } },
+                        { phone: { $regex: keyword, $options: 'i' } },
+                        { description: { $regex: keyword, $options: 'i' } },
+                        { 'specialtyDetails.name': { $regex: keyword, $options: 'i' } }
+                    ]
+                    }
+                }
+                : null,
+
+            // Gom lại theo bệnh viện sau khi unwind
+            {
+                $group: {
+                _id: '$_id',
+                name: { $first: '$name' },
+                address: { $first: '$address' },
+                phone: { $first: '$phone' },
+                description: { $first: '$description' },
+                thumbnail: { $first: '$thumbnail' },
+                images: { $first: '$images' },
+                type: { $first: '$type' },
+                doctors: { $push: '$doctorDetails' }
+                }
+            },
+
             { $skip: skip },
-            { $limit: parseInt(limitNumber) },
-            ];
+            { $limit: parseInt(limitNumber) }
+            ].filter(Boolean); // Bỏ null
 
-            const filteredPipeline = pipeline.filter(stage => stage !== null);
-            const hospitals = await Hospital.aggregate(filteredPipeline);
-            const total = await Hospital.aggregate([
-                { $match: matchStage },
-                {
-                    $lookup: {
-                    from: 'doctors',
-                    localField: 'doctors',
-                    foreignField: '_id',
-                    as: 'doctorDetails'
-                    }
-                },
-                specialty
-                    ? {
-                        $match: {
-                        'doctorDetails.specialties': { $in: [specialty] }
-                        }
-                    }
-                    : null,
-                { $count: 'count' },
-                ].filter(stage => stage !== null));
+        const hospitals = await Hospital.aggregate(pipeline);
 
-            return {
-                status: 'success',
-                message: 'Tìm kiếm bệnh viện thành công',
-                data: hospitals,
-                total: total[0]?.count || 0
-            };
-
-        } catch (error) {
-            return {
-                status: 'error',
-                message: error.message
+        // Đếm tổng kết quả
+        const totalPipeline = [
+            { $match: matchStage },
+            {
+                $lookup: {
+                from: 'doctors',
+                localField: 'doctors',
+                foreignField: '_id',
+                as: 'doctorDetails'
+                }
+            },
+            { $unwind: '$doctorDetails' },
+        specialty
+            ? {
+                $match: {
+                'doctorDetails.specialties': specialty
+                }
             }
-        }
+            : null,
+            {
+                $lookup: {
+                from: 'specialties',
+                localField: 'doctorDetails.specialties',
+                foreignField: '_id',
+                as: 'specialtyDetails'
+                }
+            },
+        keyword
+            ? {
+                $match: {
+                $or: [
+                    { name: { $regex: keyword, $options: 'i' } },
+                    { address: { $regex: keyword, $options: 'i' } },
+                    { phone: { $regex: keyword, $options: 'i' } },
+                    { description: { $regex: keyword, $options: 'i' } },
+                    { 'specialtyDetails.name': { $regex: keyword, $options: 'i' } }
+                ]
+                }
+            }
+            : null,
+            {
+                $group: {
+                _id: '$_id'
+                }
+            },
+            {
+                $count: 'count'
+            }
+        ].filter(Boolean);
+
+        const totalResult = await Hospital.aggregate(totalPipeline);
+
+        return {
+            status: 'success',
+            message: 'Tìm kiếm bệnh viện thành công',
+            data: hospitals,
+            total: totalResult[0]?.count || 0
+        };
+    } catch (error) {
+        return {
+            status: 'error',
+            message: error.message
+        };
     }
+    };
     getAllDoctorsHospital = async (hospitalId) => {
         try {
             const hospital = await Hospital.findById(hospitalId)
