@@ -11,7 +11,7 @@ class DoctorController {
             const validEmail = emailRegex.test(email);
             // const validPhone = phoneRegex.test(phone);
             const validPassword = passwordRegex.test(password);
-            if (!name|| !email || !password  || !specialties || !hospitalId || !qualification) {
+            if (!name|| !email || !password  || !specialties || !qualification) {
                 return res.status(400).json({
                     status: 'error',
                     message: 'Vui lòng điền đầy đủ thông tin'
@@ -46,7 +46,7 @@ class DoctorController {
                     message: 'Vui lòng cung cấp id'
                 });
             }
-            if (!name || !email || !hospitalId || !specialties || !qualification) {
+            if (!name || !email || !specialties || !qualification) {
                 return res.status(400).json({
                     status: 'error',
                     message: 'Vui lòng điền đầy đủ thông tin'

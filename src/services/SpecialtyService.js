@@ -1,6 +1,5 @@
 const Specialty = require('../models/Specialty');
-const fs = require('fs/promises');
-const path = require('path');
+const { moveImageToBackup,restoreImageFromBackup } = require('../utils/imageUtils');
 class SpecialtyService {
     createSpecialty = async (data) => {
         try {
@@ -73,27 +72,28 @@ class SpecialtyService {
         try {
             const { name, description, image } = data;
             const specialty = await Specialty.findById(id);
-            
+
             if (!specialty) {
                 return {
                     status: 'error',
                     message: 'Chuyên khoa không tồn tại',
                 };
             }
-            if(image && specialty.image){
-                
-                const oldImagePath = path.join(__dirname, '../../public', specialty?.image);
+
+            if (image && specialty.image && image !== specialty.image) {
                 try {
-                    await fs.unlink(oldImagePath);
-                    console.log('Old image deleted successfully');
+                    // Chuyển ảnh cũ sang backup thay vì xoá
+                    await moveImageToBackup(specialty.image);
                 } catch (err) {
-                    console.error('Error deleting old image:', err.message);
+                    console.error('❌ Lỗi khi chuyển ảnh cũ sang backup:', err.message);
                 }
             }
-            const updateData= { name, description };
+
+            const updateData = { name, description };
             if (image) {
                 updateData.image = image;
             }
+
             const updatedSpecialty = await Specialty.findByIdAndUpdate(id, updateData, { new: true });
             return {
                 status: 'success',
@@ -118,12 +118,7 @@ class SpecialtyService {
             }
             // Xóa file ảnh
             if (specialty.image && specialty) {
-                const oldImagePath = path.join(__dirname, '../../public', specialty.image);
-                fs.unlink(oldImagePath, (err) => {
-                    if (err) {
-                        console.error('Lỗi khi xóa ảnh:', err);
-                    }
-                });
+                await moveImageToBackup(specialty.image)
             }
             
             // Xóa chuyên khoa
@@ -151,13 +146,7 @@ class SpecialtyService {
             // Xóa file ảnh
             specialties.forEach(async (specialty) => {
                 if (specialty.image) {
-                    const filePath = path.join(__dirname, '../../public', specialty.image);
-                    try {
-                        await fs.unlink(filePath)
-                        console.log(`Đã xóa ảnh: ${filePath}`);
-                    } catch (err){
-                        console.error('Lỗi khi xóa ảnh:', err);
-                    }
+                    await moveImageToBackup(specialty.image);
                 }
             });
             // Xóa chuyên khoa
@@ -176,14 +165,19 @@ class SpecialtyService {
     insertManySpecialties = async (data) => {
         try {
             const specialties = data;
-            console.log('specialties', specialties);
-            
             if (!Array.isArray(specialties) || specialties.length === 0) {
                 return {
                     status: 'error',
                     message: 'Vui lòng cung cấp danh sách chuyên khoa hợp lệ',
                 };
             }
+            // Chuyển về thư mục uploads
+            specialties.forEach(async (specialty) => {
+                if (specialty.image) {
+                    await restoreImageFromBackup(specialty.image);
+                }
+            });
+
             const createdSpecialties = await Specialty.insertMany(specialties);
             return {
                 status: 'success',

@@ -1,5 +1,5 @@
 const Hospital = require('../models/Hospital');
-const {deleteFile} = require('../utils/deleteFile');
+const {deleteImage} = require('../utils/imageUtils');
 const path = require('path');
 const mongoose = require('mongoose');
 class HospitalService {
@@ -115,13 +115,13 @@ class HospitalService {
             const deleteTasks = [];
             if(thumbnail && hospital.thumbnail && thumbnail !== hospital.thumbnail) {
                 const thumbnailPath = path.join(basePath, hospital.thumbnail);
-                deleteTasks.push(deleteFile(thumbnailPath));
+                deleteTasks.push(deleteImage(thumbnailPath));
             }
             if (Array.isArray(images) && Array.isArray(hospital.images)) {
                 const removedImages = hospital.images.filter(old => !images.includes(old));
                 removedImages.forEach(image => {
                     const imagePath = path.join(basePath, image);
-                    deleteTasks.push(deleteFile(imagePath));
+                    deleteTasks.push(deleteImage(imagePath));
                 });
             }
 
@@ -159,13 +159,13 @@ class HospitalService {
             // Xoá ảnh đại diện
             if(hospital.thumbnail){
                 const thumbnailPath = path.join(basePath, hospital.thumbnail);
-                deleteTasks.push(deleteFile(thumbnailPath));
+                deleteTasks.push(deleteImage(thumbnailPath));
             }
             // Xoá các ảnh khác
             if(Array.isArray(hospital.images) && hospital.images.length > 0) {
                 hospital.images.forEach(image => {
                     const imagePath = path.join(basePath, image);
-                    deleteTasks.push(deleteFile(imagePath));
+                    deleteTasks.push(deleteImage(imagePath));
                 });
             }
             // Chờ tất cả các tác vụ xoá ảnh hoàn thành hoặc dừng nếu có 1 cái thất bại
@@ -201,13 +201,13 @@ class HospitalService {
                 // Xoá ảnh đại diện
                 if (hospital.thumbnail) {
                     const thumbnailPath = path.join(basePath, hospital.thumbnail);
-                    deleteTasks.push(deleteFile(thumbnailPath));
+                    deleteTasks.push(deleteImage(thumbnailPath));
                 }
                 // Xoá các ảnh khác
                 if (Array.isArray(hospital.images) && hospital.images.length > 0) {
                     hospital.images.forEach(image => {
                         const imagePath = path.join(basePath, image);
-                        deleteTasks.push(deleteFile(imagePath));
+                        deleteTasks.push(deleteImage(imagePath));
                     });
                 }
                 await Promise.all(deleteTasks);
