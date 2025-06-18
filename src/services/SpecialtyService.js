@@ -46,11 +46,15 @@ class SpecialtyService {
     };
     getAllSpecialties = async (data) => {
         try {
-            const { pageNumber, limitNumber } = data;
+            const { pageNumber, limitNumber,status } = data;
             const skip = (pageNumber - 1) * limitNumber;
+            let filter = {};
+            if (status && ['active', 'inactive'].includes(status)) {
+                filter.status = status;
+            }
             // Đếm tổng bản ghi
-            const total = await Specialty.countDocuments();
-            const specialties = await Specialty.find()
+            const total = await Specialty.countDocuments(filter);
+            const specialties = await Specialty.find(filter)
                 .skip(skip)
                 .limit(limitNumber)
                 .sort({ createdAt: -1 }) // Sắp xếp theo ngày tạo mới nhất
@@ -70,7 +74,7 @@ class SpecialtyService {
     };
     updateSpecialty = async (id, data) => {
         try {
-            const { name, description, image } = data;
+            const { name, description, image,status } = data;
             const specialty = await Specialty.findById(id);
 
             if (!specialty) {
@@ -92,6 +96,9 @@ class SpecialtyService {
             const updateData = { name, description };
             if (image) {
                 updateData.image = image;
+            }
+            if(status && ['active', 'inactive'].includes(status)) {
+                updateData.status = status;
             }
 
             const updatedSpecialty = await Specialty.findByIdAndUpdate(id, updateData, { new: true });

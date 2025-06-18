@@ -6,7 +6,11 @@ const WorkingScheduleScheme = new Schema(
     workDate: { type: Date, required: true },
     startTime: { type: String, required: true },  // VD: "08:00"
     endTime: { type: String, required: true },
-
+    status: {
+      type: String,
+      enum: ['active', 'inactive'],
+      default: 'active',
+    },
   },
   {
     timestamps: true,

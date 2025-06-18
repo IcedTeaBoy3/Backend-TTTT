@@ -7,12 +7,17 @@ const HospitalSchema = new Schema(
     address: { type: String, required: true },
     phone: { type: String, required: true },
     description: { type: String, required: true },
-    thumbnail: { type: String, default: '' },
+    thumbnail: { type: String },
     images: [{ type: String }], 
     type: {
       type: String,
       enum: ['hospital', 'clinic'],
-    }
+    },
+    status: {
+      type: String,
+      enum: ['active', 'inactive'],
+      default: 'active',
+    },
   },
   {
     timestamps: true,

@@ -17,7 +17,7 @@ const storage = multer.diskStorage({
 
 // Lọc file: chỉ cho phép ảnh
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|gif/;
+  const allowedTypes = /jpeg|jpg|png|gif|webp/;
   const ext = path.extname(file.originalname).toLowerCase();
   const mime = file.mimetype;
 
