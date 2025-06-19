@@ -18,7 +18,8 @@ class WorkingScheduleService {
                 },
             })
             .skip(skip)
-            .limit(limitNumber);
+            .limit(limitNumber)
+            .sort({ workDate: 1, startTime: 1 }); // Sắp xếp theo ngày làm việc và giờ bắt đầu
             if (!workingSchedules || workingSchedules.length === 0) {
                 return {
                     status: 'error',
@@ -40,7 +41,7 @@ class WorkingScheduleService {
     }
     createWorkingSchedule = async (data) => {
         try {
-            const { doctorId, workDate, startTime, endTime } = data;
+            const { doctorId, workDate, startTime, endTime, shiftDuration } = data;
             // Kiểm tra trùng lịch làm việc trong cùng ngày
             const existedSchedule = await WorkingSchedule.findOne({
                 doctor: doctorId,
@@ -60,7 +61,8 @@ class WorkingScheduleService {
                 doctor: doctorId,
                 workDate,
                 startTime,
-                endTime
+                endTime,
+                shiftDuration: shiftDuration
             });
             await newWorkingSchedule.save();
             return {
@@ -87,7 +89,9 @@ class WorkingScheduleService {
                 workDate: {
                     $gte: today // Lấy lịch làm việc từ ngày hôm nay trở đi
                 }
-            });
+            })
+            .sort({ workDate: 1 }) // Sắp xếp theo ngày làm việc
+            
 
             if (!workingSchedules || workingSchedules.length === 0) {
                 return {
@@ -110,7 +114,7 @@ class WorkingScheduleService {
     };
     updateWorkingSchedule = async (data) => {
         try {
-            const { id, doctor, workDate, startTime, endTime } = data;
+            const { id, doctor, workDate, startTime, endTime,shiftDuration } = data;
             const workingSchedule = await WorkingSchedule.findById(id);
             if(!isSameDay(workingSchedule.workDate, workDate)) {
                 const existedSchedule = await WorkingSchedule.findOne({
@@ -128,18 +132,13 @@ class WorkingScheduleService {
                     };
                 }
             }
-            const updatedWorkingSchedule = await WorkingSchedule.findByIdAndUpdate(id, {
-                doctor,
-                workDate,
-                startTime,
-                endTime
-            }, { new: true });
-            if (!updatedWorkingSchedule) {
-                return {
-                    status: 'error',
-                    message: 'Không tìm thấy lịch làm việc'
-                }
-            }
+            workingSchedule.doctor = doctor;
+            workingSchedule.workDate = workDate;
+            workingSchedule.startTime = startTime;
+            workingSchedule.endTime = endTime;
+            workingSchedule.shiftDuration = shiftDuration;
+            const updatedWorkingSchedule = await workingSchedule.save();
+            
             return {
                 status: 'success',
                 message: 'Cập nhật lịch làm việc thành công',

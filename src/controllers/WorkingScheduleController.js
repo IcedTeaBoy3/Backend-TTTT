@@ -20,8 +20,8 @@ class WorkingScheduleController {
     }
     createWorkingSchedule = async (req, res) => {
         try {
-            const { doctorId,workDate, startTime, endTime } = req.body;
-            if (!doctorId || !workDate || !startTime || !endTime) {
+            const { doctorId,workDate, startTime, endTime, shiftDuration } = req.body;
+            if (!doctorId || !workDate || !startTime || !endTime || !shiftDuration) {
                 return res.status(400).json({
                     status: 'error',
                     message: 'Vui lòng cung cấp đầy đủ thông tin',
@@ -32,6 +32,7 @@ class WorkingScheduleController {
                 workDate,
                 startTime,
                 endTime,
+                shiftDuration
             });
             return res.json(data)
         } catch (error) {
@@ -64,8 +65,8 @@ class WorkingScheduleController {
     updateWorkingSchedule = async (req, res) => {
         try {
             const { id } = req.params;
-            const { doctor,workDate, startTime, endTime } = req.body;
-            if (!id || !workDate || !startTime || !endTime|| !doctor) {
+            const { doctor,workDate, startTime, endTime,shiftDuration } = req.body;
+            if (!id || !workDate || !startTime || !endTime|| !doctor || !shiftDuration) {
                 return res.status(400).json({
                     status: 'error',
                     message: 'Vui lòng cung cấp đầy đủ thông tin',
@@ -77,6 +78,7 @@ class WorkingScheduleController {
                 workDate,
                 startTime,
                 endTime,
+                shiftDuration
             });
             return res.json(data)
         } catch (error) {
