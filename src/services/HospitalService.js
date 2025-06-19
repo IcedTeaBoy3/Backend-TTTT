@@ -102,49 +102,91 @@ class HospitalService {
     }
     updateHospital = async (id, data) => {
         try {
-            const { name, address, phone, description, thumbnail, images,doctors,type } = data;
+            const {
+                name,
+                address,
+                phone,
+                description,
+                doctors,
+                type,
+                thumbnail,
+                isImageDeleted, // thumbnail bị xoá
+                images = [],     // ảnh mới upload
+                oldImages = []   // ảnh cũ giữ lại
+            } = data;
+
             const hospital = await Hospital.findById(id);
             if (!hospital) {
                 return {
                     status: 'error',
-                    message: 'Bệnh viện không tồn tại'
-                }
+                    message: 'Bệnh viện không tồn tại',
+                };
             }
-            // Xoá ảnh cũ nếu có
+
             const basePath = path.join(__dirname, '../../public');
             const deleteTasks = [];
-            if(thumbnail && hospital.thumbnail && thumbnail !== hospital.thumbnail) {
-                const thumbnailPath = path.join(basePath, hospital.thumbnail);
-                deleteTasks.push(deleteImage(thumbnailPath));
+
+            // --- Xử lý thumbnail ---
+            if (isImageDeleted || (thumbnail && thumbnail !== hospital.thumbnail)) {
+                if (hospital.thumbnail) {
+                    const thumbnailPath = path.join(basePath, hospital.thumbnail);
+                    deleteTasks.push(deleteImage(thumbnailPath));
+                }
             }
-            if (Array.isArray(images) && Array.isArray(hospital.images)) {
-                const removedImages = hospital.images.filter(old => !images.includes(old));
-                removedImages.forEach(image => {
-                    const imagePath = path.join(basePath, image);
-                    deleteTasks.push(deleteImage(imagePath));
+
+            // --- Xử lý ảnh chi tiết ---
+            const newImageList = [...oldImages]; // khởi đầu là ảnh cũ giữ lại
+            if (Array.isArray(images) && images.length > 0) {
+                newImageList.push(...images); // thêm ảnh mới vào danh sách
+            }
+
+            if (Array.isArray(hospital.images)) {
+                const removedImages = hospital.images.filter(
+                    (oldImg) => !oldImages.includes(oldImg)
+                );
+                removedImages.forEach((img) => {
+                    const imgPath = path.join(basePath, img);
+                    deleteTasks.push(deleteImage(imgPath));
                 });
             }
 
-            const updateData = { name, address, phone, description,doctors,type };
-            if (thumbnail) updateData.thumbnail = thumbnail;
-            if (Array.isArray(images)) updateData.images = images;
+            const updateData = {
+                name,
+                address,
+                phone,
+                description,
+                doctors,
+                type,
+                images: newImageList,
+            };
 
-            // Chờ tất cả các tác vụ xoá ảnh hoàn thành hoặc dừng nếu có 1 cái thất bại
+            if (thumbnail && !isImageDeleted) {
+                updateData.thumbnail = thumbnail;
+            } else if (isImageDeleted) {
+                updateData.thumbnail = null;
+            }
+
+            // Thực hiện xóa các ảnh không cần nữa
             await Promise.all(deleteTasks);
-            // Cập nhật bệnh viện
-            const updatedHospital = await Hospital.findByIdAndUpdate(id, updateData, { new: true });
+
+            // Cập nhật thông tin bệnh viện
+            const updatedHospital = await Hospital.findByIdAndUpdate(id, updateData, {
+                new: true,
+            });
+
             return {
                 status: 'success',
                 message: 'Cập nhật bệnh viện thành công',
-                data: updatedHospital
+                data: updatedHospital,
             };
         } catch (error) {
             return {
                 status: 'error',
-                message: error.message
-            }
+                message: error.message,
+            };
         }
-    }
+    };
+
     deleteHospital = async (id) => {
         try {
             const hospital = await Hospital.findById(id);

@@ -77,7 +77,7 @@ class HospitalController {
             const thumbnailPath = req.files['thumbnail'] ? `/uploads/${req.files['thumbnail'][0].filename}` : undefined;
             const imagesPath = req.files['images'] ? req.files['images'].map(file => `/uploads/${file.filename}`) : undefined;
 
-            const { name, address, phone, description, doctors, type } = req.body;
+            const { name, address, phone, description, doctors, type,oldThumbnail,isThumbnailDeleted,oldImages } = req.body;
 
             const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
             if (!id) {
@@ -96,6 +96,9 @@ class HospitalController {
                 phone,
                 description,
                 doctors: doctors ? JSON.parse(doctors) : [],
+                oldThumbnail: oldThumbnail || null,
+                isThumbnailDeleted,
+                oldImages: oldImages ? JSON.parse(oldImages) : [],
                 type
             };
 
