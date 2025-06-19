@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const DoctorController = require("../controllers/DoctorController");
 const { Authenticate, Authorize } = require("../middlewares/AuthMiddleware");
+const upload = require('../middlewares/UploadMiddleware');
 
 router.post(
   "/create-doctor",
@@ -9,7 +10,7 @@ router.post(
   Authorize(["admin"]),
   DoctorController.createDoctor
 );
-router.put("/update-doctor/:id", Authenticate, Authorize(["admin","doctor"]) ,DoctorController.updateDoctor);
+router.put("/update-doctor/:id", Authenticate, Authorize(["admin","doctor"]), upload.single('avatar'),DoctorController.updateDoctor);
 router.delete("/delete-doctor/:id", Authenticate, Authorize(["admin"]), DoctorController.deleteDoctor);
 router.post("/delete-many-doctors", Authenticate, Authorize(["admin"]), DoctorController.deleteManyDoctors);
 router.get("/get-all-doctors", DoctorController.getAllDoctors);

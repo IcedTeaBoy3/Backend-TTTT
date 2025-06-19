@@ -1,5 +1,6 @@
 const Specialty = require('../models/Specialty');
-const { moveImageToBackup,restoreImageFromBackup } = require('../utils/imageUtils');
+const { moveImageToBackup,restoreImageFromBackup,deleteImage } = require('../utils/imageUtils');
+const path = require('path');
 class SpecialtyService {
     createSpecialty = async (data) => {
         try {
@@ -74,7 +75,7 @@ class SpecialtyService {
     };
     updateSpecialty = async (id, data) => {
         try {
-            const { name, description, image,status } = data;
+            const { name, description, image, oldImage, status, isImageDeleted } = data;
             const specialty = await Specialty.findById(id);
 
             if (!specialty) {
@@ -84,24 +85,37 @@ class SpecialtyService {
                 };
             }
 
-            if (image && specialty.image && image !== specialty.image) {
-                try {
-                    // Chuyển ảnh cũ sang backup thay vì xoá
-                    await moveImageToBackup(specialty.image);
-                } catch (err) {
-                    console.error('❌ Lỗi khi chuyển ảnh cũ sang backup:', err.message);
-                }
+            const basePath = path.join(__dirname, '../../public');
+            const updateData = { name, description };
+
+            // Xử lý xoá ảnh nếu có cờ xoá
+            if (isImageDeleted && specialty.image) {
+                const oldImagePath = path.join(basePath, specialty.image);
+                await deleteImage(oldImagePath);
+                updateData.image = '';
             }
 
-            const updateData = { name, description };
-            if (image) {
+            // Nếu có ảnh mới → xoá ảnh cũ nếu khác và cập nhật ảnh mới
+            if (image && image !== specialty.image) {
+                if (specialty.image) {
+                    const oldImagePath = path.join(basePath, specialty.image);
+                    await deleteImage(oldImagePath);
+                }
                 updateData.image = image;
             }
-            if(status && ['active', 'inactive'].includes(status)) {
+
+            // Nếu không có ảnh mới và không xoá ảnh, giữ lại ảnh cũ
+            if (!image && !isImageDeleted && oldImage) {
+                updateData.image = oldImage;
+            }
+
+            // Cập nhật trạng thái nếu hợp lệ
+            if (['active', 'inactive'].includes(status)) {
                 updateData.status = status;
             }
 
             const updatedSpecialty = await Specialty.findByIdAndUpdate(id, updateData, { new: true });
+
             return {
                 status: 'success',
                 message: 'Cập nhật chuyên khoa thành công',

@@ -40,6 +40,7 @@ class DoctorController {
         try {
             const { id } = req.params;
             const { name, email, phone, address, specialties, hospitalId, position, qualification, experience, description } = req.body;
+            const avatarPath = req.file ? `/uploads/${req.file.filename}` : null;
             if (!id) {
                 return res.status(400).json({
                     status: 'error',
@@ -52,7 +53,19 @@ class DoctorController {
                     message: 'Vui lòng điền đầy đủ thông tin'
                 });
             }
-            const data = await DoctorService.updateDoctor(id, req.body);
+            const data = await DoctorService.updateDoctor(id, {
+                name,
+                email,
+                phone,
+                address,
+                specialties,
+                hospitalId,
+                position,
+                qualification,
+                experience,
+                description,
+                avatar: avatarPath
+            });
             res.json(data);
         } catch (error) {
             res.status(500).json({

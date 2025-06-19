@@ -129,7 +129,6 @@ class UserController {
     uploadAvatar = async (req, res) => {
         try {
             const userId = req.params.id;
-            
             if (!userId) {
                 return res.status(400).json({
                     status: 'error',
@@ -142,6 +141,7 @@ class UserController {
                     message: 'Vui lòng tải lên tệp ảnh'
                 });
             }
+            console.log('req.file', req.file);
             const data = await UserService.uploadAvatar(userId, req.file);
             res.json(data);
         } catch (error) {

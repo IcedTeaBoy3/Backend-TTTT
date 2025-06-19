@@ -48,7 +48,6 @@ class SpecialtyController {
     getAllSpecialties = async (req, res) => {
         try {
             const { page, limit, status } = req.query;
-            console.log('status', status);
             let pageNumber = parseInt(page);
             if (isNaN(pageNumber) || pageNumber < 1) pageNumber = 1;
             const limitNumber = parseInt(limit);
@@ -64,7 +63,7 @@ class SpecialtyController {
     updateSpecialty = async (req, res) => {
         try {
             const { id } = req.params;
-            const { name, description,status } = req.body;
+            const { name, description,status,oldImage,isImageDeleted } = req.body;
             const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
             if (!id) {
                 return res.status(400).json({
@@ -82,6 +81,8 @@ class SpecialtyController {
                 name,
                 description,
                 image:imagePath,
+                isImageDeleted,
+                oldImage,
                 status
             });
             res.json(data);

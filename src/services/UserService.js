@@ -148,6 +148,8 @@ class UserService {
     }
     uploadAvatar = async (userId, file) => {
         try {
+            console.log('file', file);
+            console.log('userId', userId);
             const user = await User.findById(userId);
             if (!user) {
                 return {
@@ -165,6 +167,7 @@ class UserService {
                     console.error('Error deleting old image:', err.message);
                 }
             }
+            console.log('fileName', file.filename);
             user.avatar = `/uploads/${file.filename}`; // lưu tệp vào thư mục uploads
             await user.save();
             return {

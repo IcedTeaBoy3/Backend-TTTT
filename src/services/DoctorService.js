@@ -54,6 +54,7 @@ class DoctorService {
                 email,
                 phone,
                 address,
+                avatar,
                 specialties,
                 hospitalId,
                 position,
@@ -91,10 +92,12 @@ class DoctorService {
             }
 
             // Cập nhật user
-            user.name = name;
-            user.email = email;
-            user.phone = phone;
-            user.address = address;
+            user.name = name || user.name; 
+            user.email = email || user.email; 
+            user.phone = phone || user.phone;
+            user.address = address || user.address;
+            user.avatar = avatar || user.avatar;
+
             await user.save();
 
             // Cập nhật doctor
@@ -143,7 +146,7 @@ class DoctorService {
             const { page, limit } = data;
             const skip = (page - 1) * limit;
             const doctors = await Doctor.find()
-                .populate('user', 'name email phone address')
+                .populate('user', 'name email phone address avatar')
                 .populate('specialties', 'name')
                 .populate('hospital', 'name')
                 .skip(skip)
