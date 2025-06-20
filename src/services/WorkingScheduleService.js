@@ -90,7 +90,8 @@ class WorkingScheduleService {
                     $gte: today // Lấy lịch làm việc từ ngày hôm nay trở đi
                 }
             })
-            .sort({ workDate: 1 }) // Sắp xếp theo ngày làm việc
+            .sort({ workDate: 1, startTime: 1 }) // Sắp xếp theo ngày làm việc và giờ bắt đầu
+            .sort({createdAt: -1}) // Sắp xếp theo ngày tạo mới nhất
             
 
             if (!workingSchedules || workingSchedules.length === 0) {
@@ -114,11 +115,12 @@ class WorkingScheduleService {
     };
     updateWorkingSchedule = async (data) => {
         try {
-            const { id, doctor, workDate, startTime, endTime,shiftDuration } = data;
+            const { id, doctor, workDate, startTime, endTime,shiftDuration,status } = data;
             const workingSchedule = await WorkingSchedule.findById(id);
             if(!isSameDay(workingSchedule.workDate, workDate)) {
                 const existedSchedule = await WorkingSchedule.findOne({
                     doctor: doctor,
+                    _id: { $ne: id }, // loại trừ chính nó
                     workDate: {
                         $gte: new Date(new Date(workDate).setHours(0, 0, 0, 0)),
                         $lte: new Date(new Date(workDate).setHours(23, 59, 59, 999))
@@ -137,6 +139,7 @@ class WorkingScheduleService {
             workingSchedule.startTime = startTime;
             workingSchedule.endTime = endTime;
             workingSchedule.shiftDuration = shiftDuration;
+            workingSchedule.status = status || 'active'; // Mặc định là 'active' nếu không có giá trị status
             const updatedWorkingSchedule = await workingSchedule.save();
             
             return {

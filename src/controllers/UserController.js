@@ -35,7 +35,6 @@ class UserController {
         try {
             const userId = req.params.id;
             const { name, email, phone, dateOfBirth, gender, address, ethnic, idCard, insuranceCode, job } = req.body;
-            console.log('req.body', req.body);
             
             const emailRegex = /\S+@\S+\.\S+/;
             const phoneRegex = /^(0[3|5|7|8|9])+([0-9]{8})$/;
@@ -141,7 +140,6 @@ class UserController {
                     message: 'Vui lòng tải lên tệp ảnh'
                 });
             }
-            console.log('req.file', req.file);
             const data = await UserService.uploadAvatar(userId, req.file);
             res.json(data);
         } catch (error) {

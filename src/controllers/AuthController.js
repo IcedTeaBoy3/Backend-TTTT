@@ -189,8 +189,6 @@ class AuthController {
     forgotPassword = async (req, res) => {
         try {
             const { email } = req.body;
-            console.log('email', email);
-            
             const emailRegex = /\S+@\S+\.\S+/;
             if (!emailRegex.test(email)) {
                 return res.status(400).json({

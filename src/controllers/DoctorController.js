@@ -2,7 +2,6 @@ const DoctorService = require('../services/DoctorService');
 class DoctorController {
     createDoctor = async (req, res) => {
         try {
-            console.log("req.body", req.body);
             
             const { name, email, password, address, specialties, hospitalId, position, qualification, experience, description } = req.body;
             const phoneRegex = /^(03|05|07|08|09)\d{8}$/;

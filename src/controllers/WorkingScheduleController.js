@@ -27,6 +27,7 @@ class WorkingScheduleController {
                     message: 'Vui lòng cung cấp đầy đủ thông tin',
                 });
             }
+            console.log('doctorId workDate startTime endTime shiftDuration', doctorId, workDate, startTime, endTime, shiftDuration);
             const data = await WorkingScheduleService.createWorkingSchedule({
                 doctorId,
                 workDate,
@@ -65,7 +66,7 @@ class WorkingScheduleController {
     updateWorkingSchedule = async (req, res) => {
         try {
             const { id } = req.params;
-            const { doctor,workDate, startTime, endTime,shiftDuration } = req.body;
+            const { doctor,workDate, startTime, endTime,shiftDuration,status } = req.body;
             if (!id || !workDate || !startTime || !endTime|| !doctor || !shiftDuration) {
                 return res.status(400).json({
                     status: 'error',
@@ -78,7 +79,8 @@ class WorkingScheduleController {
                 workDate,
                 startTime,
                 endTime,
-                shiftDuration
+                shiftDuration,
+                status
             });
             return res.json(data)
         } catch (error) {
