@@ -171,6 +171,50 @@ class AppointmentController {
             });
         }
     }
+    completeAppointment = async (req, res) => {
+        try {
+            const { id } = req.params;
+            if (!id) {
+                return res.status(400).json({ 
+                    status: 'error', 
+                    message: 'Vui lòng cung cấp ID của cuộc hẹn cần hoàn thành' 
+                });
+            }
+            const data = await AppointmentService.completeAppointment(id);
+            return res.json(data);
+        } catch (error) {
+            return res.status(500).json({ 
+                status: 'error', 
+                message: error.message 
+            });
+        }
+    }
+    getAllAppointmentsByDoctor = async (req, res) => {
+        try {
+            const { doctorId } = req.params;
+            const { page, pageSize } = req.query;
+            const pageNumber = parseInt(page)
+            const limitNumber = parseInt(pageSize) 
+
+            if (!doctorId) {
+                return res.status(400).json({ 
+                    status: 'error', 
+                    message: 'ID bác sĩ không được để trống' 
+                });
+            }
+            const appointments = await AppointmentService.getAllAppointmentsByDoctor({
+                doctorId,
+                page: pageNumber,
+                limit: limitNumber
+            });
+            return res.json(appointments);
+        } catch (error) {
+            return res.status(500).json({ 
+                status: 'error', 
+                message: error.message 
+            });
+        }
+    }
 }
 
 module.exports = new AppointmentController();

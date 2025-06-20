@@ -16,5 +16,6 @@ router.post("/delete-many-doctors", Authenticate, Authorize(["admin"]), DoctorCo
 router.get("/get-all-doctors", DoctorController.getAllDoctors);
 router.get("/get-doctor/:id", DoctorController.getDoctor);
 router.get("/search-doctors", DoctorController.searchDoctors);
+router.get("/get-doctor-by-userId",Authenticate,DoctorController.getDoctorByUserId);
 
 module.exports = router;

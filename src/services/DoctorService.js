@@ -296,6 +296,26 @@ class DoctorService {
             };
         }
     }
-
+    getDoctorByUserId = async (userId) => {
+        try {
+            const doctor = await Doctor.findOne({ user: userId })
+                .populate('user')
+                .populate('specialties', 'name description image')
+                .populate('hospital');
+            if (!doctor) {
+                return {
+                    status: 'error',
+                    message: 'Không tìm thấy bác sĩ'
+                };
+            }
+            return {
+                status: 'success',
+                message: 'Lấy thông tin bác sĩ thành công',
+                data: doctor
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
 }
 module.exports = new DoctorService();

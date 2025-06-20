@@ -9,6 +9,8 @@ router.post("/delete-many-appointments", Authenticate, Authorize(["admin"]), App
 router.put("/update-appointment/:id", Authenticate, Authorize(["admin"]), AppointmentController.updateAppointment);
 router.get("/get-all-appointments", Authenticate, Authorize(["admin"]), AppointmentController.getAllAppointments);
 router.get("/get-all-appointments-by-patient/:patientId", Authenticate, AppointmentController.getAllAppointmentsByPatient);
+router.get("/get-all-appointments-by-doctor/:doctorId", Authenticate,Authorize(["admin","doctor"]), AppointmentController.getAllAppointmentsByDoctor);
 router.put("/cancel-appointment/:id", Authenticate, AppointmentController.cancelAppointment);
 router.put("/confirm-appointment/:id", Authenticate, Authorize(["admin"]), AppointmentController.confirmAppointment);
+router.put("/complete-appointment/:id", Authenticate, Authorize(["doctor"]), AppointmentController.completeAppointment);
 module.exports = router;

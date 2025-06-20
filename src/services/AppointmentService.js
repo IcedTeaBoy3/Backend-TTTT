@@ -340,5 +340,64 @@ class AppointmentService {
             };
         }
     }
+    completeAppointment = async (id) => {
+        try {
+            const appointment = await Appointment.findByIdAndUpdate(id, { status: 'completed' }, { new: true });
+            if (!appointment) {
+                return {
+                    status: 'error',
+                    message: 'Không tìm thấy lịch hẹn với ID này'
+                };
+            }
+            return {
+                status: 'success',
+                message: 'Lịch hẹn đã được hoàn thành thành công',
+                data: appointment
+            }
+        }catch (error) {
+            return {
+                status: 'error',
+                message: error.message
+            };
+        }
+    }
+    getAllAppointmentsByDoctor = async (data) => {
+        try {
+            const { doctorId, page = 1, limit = 10 } = data;
+            const skip = (page - 1) * limit;
+            const appointments = await Appointment.find({ doctor: doctorId })
+            .populate({
+                path: 'patient',
+                select: 'name email'
+            })
+            .populate({
+                    path: 'doctor',
+                    select: 'user specialties',
+                    populate: [
+                        { path: 'user', select: 'name email avatar' },
+                        { path: 'specialties', select: 'name description' },
+                    ]
+                })
+            .populate('schedule', 'workDate startTime endTime shiftDuration')
+            .populate('hospital', 'name address')
+            .populate('specialty', 'name description')
+            .skip(skip)
+            .limit(limit)
+            .sort({ createdAt: -1 })
+            .lean();
+            const totalAppointments = await Appointment.countDocuments({ doctor: doctorId });
+            return {
+                status: 'success',
+                message: 'Lấy danh sách lịch hẹn của bác sĩ thành công',
+                data: appointments,
+                total: totalAppointments,
+            };
+        }catch (error) {
+            return {
+                status: 'error',
+                message: error.message
+            };
+        }
+    }
 }
 module.exports = new AppointmentService();
