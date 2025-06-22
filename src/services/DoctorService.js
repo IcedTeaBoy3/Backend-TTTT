@@ -146,15 +146,17 @@ class DoctorService {
     }
     getAllDoctors = async (data) => {
         try {
-            const { page, limit } = data;
+            const { page, limit,isHospitalNotNull } = data;
             const skip = (page - 1) * limit;
-            const doctors = await Doctor.find()
+            // Nếu isHospitalNotNull là true, chỉ lấy bác sĩ có bệnh viện
+            const matchCondition = isHospitalNotNull ? { hospital: { $ne: null } } : {};
+            const doctors = await Doctor.find(matchCondition)
                 .populate('user', 'name email phone address avatar')
                 .populate('specialties', 'name')
                 .populate('hospital', 'name')
                 .skip(skip)
                 .limit(limit);
-            const total = await Doctor.countDocuments();
+            const total = await Doctor.countDocuments(matchCondition);
             return {
                 status: 'success',
                 message: 'Lấy danh sách bác sĩ thành công',
