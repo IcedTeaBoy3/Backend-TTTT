@@ -39,6 +39,7 @@ class DoctorController {
         try {
             const { id } = req.params;
             const { name, email, phone, address, specialties, hospitalId, position, qualification, experience, description } = req.body;
+            console.log(req.body);
             const avatarPath = req.file ? `/uploads/${req.file.filename}` : null;
             if (!id) {
                 return res.status(400).json({

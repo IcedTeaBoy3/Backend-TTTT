@@ -109,6 +109,9 @@ class DoctorService {
             doctor.description = description;
 
             await doctor.save();
+            await doctor.populate('user', 'name email phone address avatar');
+            await doctor.populate('specialties', 'name description');
+            await doctor.populate('hospital');
 
             return {
                 status: "success",

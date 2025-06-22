@@ -3,13 +3,13 @@ const router = express.Router();
 const HospitalController = require('../controllers/HospitalController');
 const upload= require('../middlewares/UploadMiddleware');
 const { Authenticate, Authorize } = require("../middlewares/AuthMiddleware");
-router.post('/create-hospital',Authenticate, Authorize(["admin"]),upload.fields([
+router.post('/create-hospital',Authenticate, Authorize(["admin","doctor"]),upload.fields([
   { name: 'thumbnail', maxCount: 1 },
   { name: 'images', maxCount: 5 },
 ]),HospitalController.createHospital);
 router.get('/get-hospital/:id', HospitalController.getHospital);
 router.get('/get-all-hospitals', HospitalController.getAllHospitals);
-router.put('/update-hospital/:id',Authenticate, Authorize(["admin"]),upload.fields([
+router.put('/update-hospital/:id',Authenticate, Authorize(["admin","doctor"]),upload.fields([
   { name: 'thumbnail', maxCount: 1 },
   { name: 'images', maxCount: 5 },
 ]), HospitalController.updateHospital);
