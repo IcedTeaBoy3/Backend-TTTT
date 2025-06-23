@@ -68,15 +68,18 @@ class HospitalService {
     }
     getAllHospitals = async (data) => {
         try {
-            const { pageNumber, limitNumber,type } = data;
+            const { pageNumber, limitNumber, type, status } = data;
             const skip = (pageNumber - 1) * limitNumber;
-            let query = {};
+            let filter = {};
             if (type) {
-                query.type = type; // Chỉ lấy bệnh viện hoặc phòng khám theo loại
+                filter.type = type;
+            }
+            if (status && ['active', 'inactive'].includes(status)) {
+                filter.status = status;
             }
             // Đếm tổng bản ghi
-            const total = await Hospital.countDocuments(query);
-            const hospitals = await Hospital.find(query)
+            const total = await Hospital.countDocuments(filter);
+            const hospitals = await Hospital.find(filter)
             .skip(skip)
             .limit(limitNumber)
             .populate({
@@ -112,7 +115,8 @@ class HospitalService {
                 thumbnail,
                 isImageDeleted, // thumbnail bị xoá
                 images = [],     // ảnh mới upload
-                oldImages = []   // ảnh cũ giữ lại
+                oldImages = [],  // ảnh cũ giữ lại
+                status 
             } = data;
 
             const hospital = await Hospital.findById(id);
@@ -158,6 +162,7 @@ class HospitalService {
                 doctors,
                 type,
                 images: newImageList,
+                status
             };
 
             if (thumbnail && !isImageDeleted) {
@@ -186,7 +191,6 @@ class HospitalService {
             };
         }
     };
-
     deleteHospital = async (id) => {
         try {
             const hospital = await Hospital.findById(id);
@@ -447,8 +451,9 @@ class HospitalService {
         };
     }
     };
-    getAllDoctorsHospital = async (hospitalId) => {
+    getAllDoctorsHospital = async (data) => {
         try {
+            const { hospitalId } = data;
             const hospital = await Hospital.findById(hospitalId)
                 .populate({
                     path: 'doctors',

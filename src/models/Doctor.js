@@ -7,7 +7,8 @@ const DoctorSchema = new Schema(
     specialties: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Specialty',required: true }],
     position: { type: String },
     qualification: { type: String, required: true },
-    experience: { type: String },
+    yearExperience: { type: Number},
+    detailExperience: { type: String },
     description: { type: String },
   },
   {

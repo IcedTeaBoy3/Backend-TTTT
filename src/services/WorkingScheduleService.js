@@ -77,22 +77,26 @@ class WorkingScheduleService {
             }
         }
     }
-    getWorkingScheduleByDoctor = async (doctorId) => {
+    getWorkingScheduleByDoctor = async (data) => {
         try {
-            
-            // Kiểm tra xem lịch có nhỏ hơn ngày hiện tại không
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // Đặt giờ, phút, giây về 0 để so sánh theo ngày
-
-            const workingSchedules = await WorkingSchedule.find({
+            const { doctorId, status, time } = data;
+            console.log('doctorId status time', doctorId, status, time);
+            let filter = {
                 doctor: doctorId,
-                workDate: {
-                    $gte: today // Lấy lịch làm việc từ ngày hôm nay trở đi
-                }
-            })
-            .sort({ workDate: 1, startTime: 1 }) // Sắp xếp theo ngày làm việc và giờ bắt đầu
-            .sort({createdAt: -1}) // Sắp xếp theo ngày tạo mới nhất
-            
+            };
+
+            if (time === 'future') {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                filter.workDate = { $gte: today };
+            }
+
+            if (status && ['active', 'inactive'].includes(status)) {
+                filter.status = status;
+            }
+
+            const workingSchedules = await WorkingSchedule.find(filter)
+                .sort({ workDate: 1, startTime: 1, createdAt: -1 });
 
             if (!workingSchedules || workingSchedules.length === 0) {
                 return {
@@ -113,6 +117,7 @@ class WorkingScheduleService {
             };
         }
     };
+
     updateWorkingSchedule = async (data) => {
         try {
             const { id, doctor, workDate, startTime, endTime,shiftDuration,status } = data;

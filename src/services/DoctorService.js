@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 class DoctorService {
     createDoctor = async (data) => {
         try {
-            const { name, email, password, phone, address, specialties, hospitalId, position, qualification ,experience , description} = data;
+            const { name, email, password, phone, address, specialties, hospitalId, position, qualification , yearExperience, detailExperience, description} = data;
             const hashPassword = await bcrypt.hash(password, 10);
             const existingUser = await User.findOne({ email: email });
             if (existingUser) {
@@ -35,7 +35,8 @@ class DoctorService {
                 hospital: hospitalId,
                 position,
                 qualification,
-                experience,
+                yearExperience,
+                detailExperience,
                 description
             });
             return {
@@ -57,10 +58,11 @@ class DoctorService {
                 avatar,
                 specialties,
                 hospitalId,
-                position,
-                qualification,
-                experience,
-                description
+                position = '',
+                qualification  = 'Cử nhân',
+                yearExperience = 0,
+                detailExperience = '',
+                description = ''
             } = data;
 
             // Lấy doctor trước
@@ -105,13 +107,15 @@ class DoctorService {
             doctor.hospital = hospitalId;
             doctor.position = position;
             doctor.qualification = qualification;
-            doctor.experience = experience;
+            doctor.yearExperience = yearExperience;
+            doctor.detailExperience = detailExperience;
             doctor.description = description;
 
             await doctor.save();
             await doctor.populate('user', 'name email phone address avatar');
             await doctor.populate('specialties', 'name description');
             await doctor.populate('hospital');
+            
 
             return {
                 status: "success",

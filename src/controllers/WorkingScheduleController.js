@@ -47,13 +47,18 @@ class WorkingScheduleController {
     getWorkingScheduleByDoctor = async (req, res) => {
         try {
             const { doctorId } = req.params;
+            const { status,time } = req.query; 
             if (!doctorId) {
                 return res.status(400).json({
                     status: 'error',
                     message: 'Vui lòng cung cấp đầy đủ thông tin',
                 });
             }
-            const data = await WorkingScheduleService.getWorkingScheduleByDoctor(doctorId);
+            const data = await WorkingScheduleService.getWorkingScheduleByDoctor({
+                doctorId,
+                status,
+                time
+            });
             return res.json(data)
         } catch (error) {
             return res.status(500).json({

@@ -3,7 +3,7 @@ class DoctorController {
     createDoctor = async (req, res) => {
         try {
             
-            const { name, email, password, address, specialties, hospitalId, position, qualification, experience, description } = req.body;
+            const { name, email, password, address, specialties, hospitalId, position, qualification, description,yearExperience,detailExperience } = req.body;
             const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
             const emailRegex = /\S+@\S+\.\S+/;
             const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -38,8 +38,7 @@ class DoctorController {
     updateDoctor = async (req, res) => {
         try {
             const { id } = req.params;
-            const { name, email, phone, address, specialties, hospitalId, position, qualification, experience, description } = req.body;
-            console.log(req.body);
+            const { name, email, phone, address, specialties, hospitalId, position, qualification, yearExperience, detailExperience, description } = req.body;
             const avatarPath = req.file ? `/uploads/${req.file.filename}` : null;
             if (!id) {
                 return res.status(400).json({
@@ -62,7 +61,8 @@ class DoctorController {
                 hospitalId,
                 position,
                 qualification,
-                experience,
+                yearExperience,
+                detailExperience,
                 description,
                 avatar: avatarPath
             });

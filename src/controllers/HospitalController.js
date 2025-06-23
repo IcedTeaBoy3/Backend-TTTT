@@ -59,10 +59,10 @@ class HospitalController {
     }
     getAllHospitals = async (req, res) => {
         try {
-            const { page, limit,type } = req.query;
+            const { page, limit, type, status } = req.query;
             const pageNumber = parseInt(page) || 1;
             const limitNumber = parseInt(limit) || 10;
-            const data = await HospitalService.getAllHospitals({pageNumber, limitNumber,type});
+            const data = await HospitalService.getAllHospitals({pageNumber,limitNumber,type,status});
             res.json(data);
         } catch (error) {
             res.status(500).json({
@@ -77,7 +77,7 @@ class HospitalController {
             const thumbnailPath = req.files['thumbnail'] ? `/uploads/${req.files['thumbnail'][0].filename}` : undefined;
             const imagesPath = req.files['images'] ? req.files['images'].map(file => `/uploads/${file.filename}`) : undefined;
 
-            const { name, address, phone, description, doctors, type,oldThumbnail,isThumbnailDeleted,oldImages } = req.body;
+            const { name, address, phone, description, doctors, type,oldThumbnail,isThumbnailDeleted,oldImages,status } = req.body;
 
             const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
             if (!id) {
@@ -99,7 +99,8 @@ class HospitalController {
                 oldThumbnail: oldThumbnail || null,
                 isThumbnailDeleted,
                 oldImages: oldImages ? JSON.parse(oldImages) : [],
-                type
+                type,
+                status
             };
 
             if (typeof thumbnailPath !== 'undefined') {
@@ -116,7 +117,6 @@ class HospitalController {
             res.status(500).json({ status: 'error', message: error.message });
         }
     }
-
     deleteHospital = async (req, res) => {
         try {
             const id = req.params.id;
@@ -179,7 +179,9 @@ class HospitalController {
                     message: 'Vui lòng cung cấp id bệnh viện'
                 });
             }
-            const data = await HospitalService.getAllDoctorsHospital(id);
+            const data = await HospitalService.getAllDoctorsHospital({
+                hospitalId: id,
+            });
             res.json(data);
         } catch (error) {
             res.status(500).json({
