@@ -177,5 +177,29 @@ class DoctorController {
             });
         }
     }
+    getDoctorStatistics = async (req, res) => {
+        try {
+            const doctorId = req.params.id;
+            const { from, to, type = 'daily' } = req.query;
+            if (!doctorId) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Vui lòng cung cấp id'
+                });
+            }
+            const data = await DoctorService.getDoctorStatistics({
+                doctorId,
+                from,
+                to,
+                type
+            });
+            res.json(data);
+        } catch (error) {
+            res.status(500).json({
+                status: 'error',
+                message: error.message
+            });
+        }
+    }
 }
 module.exports = new DoctorController();

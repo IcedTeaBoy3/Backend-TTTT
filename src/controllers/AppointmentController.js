@@ -32,8 +32,8 @@ class AppointmentController {
     getAllAppointments = async (req, res) => {
         try {
             const { page, limit } = req.query;
-            const pageNumber = parseInt(page) || 1;
-            const limitNumber = parseInt(limit) || 10;
+            const pageNumber = parseInt(page);
+            const limitNumber = parseInt(limit);
             const appointments = await AppointmentService.getAllAppointments({
                 page: pageNumber,
                 limit: limitNumber

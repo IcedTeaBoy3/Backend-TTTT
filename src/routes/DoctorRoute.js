@@ -17,5 +17,6 @@ router.get("/get-all-doctors", DoctorController.getAllDoctors);
 router.get("/get-doctor/:id", DoctorController.getDoctor);
 router.get("/search-doctors", DoctorController.searchDoctors);
 router.get("/get-doctor-by-userId",Authenticate,DoctorController.getDoctorByUserId);
+router.get("/:id/statistics", Authenticate, Authorize(["doctor"]), DoctorController.getDoctorStatistics);
 
 module.exports = router;

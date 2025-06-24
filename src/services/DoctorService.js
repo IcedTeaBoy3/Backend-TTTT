@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Doctor = require('../models/Doctor');
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
+const Appointment = require('../models/Appointment');
 class DoctorService {
     createDoctor = async (data) => {
         try {
@@ -326,5 +327,127 @@ class DoctorService {
             throw error;
         }
     }
+    getDoctorStatistics = async (data) => {
+        try {
+            const { doctorId, from, to } = data;
+            if (!doctorId) {
+                return {
+                    status: 'error',
+                    message: 'Vui lòng cung cấp doctorId'
+                };
+            }
+
+            // Parse ngày
+            const fromDate = new Date(from);
+            const toDate = new Date(to);
+            toDate.setHours(23, 59, 59, 999);
+
+            // Lấy tất cả lịch trong khoảng để tái sử dụng
+            const appointmentsInRange = await Appointment.find({
+                doctor: doctorId
+            }).populate('schedule', 'workDate');
+
+            const isWithinRange = (date) => {
+                const d = new Date(date);
+                return d >= fromDate && d <= toDate;
+            };
+
+            const todayStr = new Date().toISOString().slice(0, 10);
+
+            // Overview
+            const todayCount = appointmentsInRange.filter(
+                ap => ap.schedule?.workDate?.toISOString().slice(0, 10) === todayStr
+            ).length;
+
+            const monthCount = appointmentsInRange.filter(
+                ap => isWithinRange(ap.schedule?.workDate)
+            ).length;
+
+            const completeCount = await Appointment.countDocuments({
+                doctor: doctorId,
+                status: 'completed'
+            });
+
+            const cancelCount = await Appointment.countDocuments({
+                doctor: doctorId,
+                status: 'cancelled'
+            });
+
+            // Chart Data (Group theo ngày khám)
+            const chartData = await Appointment.aggregate([
+                {
+                    $match: {
+                        doctor: new mongoose.Types.ObjectId(doctorId)
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'workingschedules',
+                        localField: 'schedule',
+                        foreignField: '_id',
+                        as: 'schedule'
+                    }
+                },
+                { $unwind: '$schedule' },
+                {
+                    $match: {
+                        'schedule.workDate': { $gte: fromDate, $lte: toDate }
+                    }
+                },
+                {
+                    $group: {
+                        _id: '$schedule.workDate',
+                        appointments: { $sum: 1 }
+                    }
+                },
+                {
+                    $project: {
+                        date: '$_id',
+                        appointments: 1,
+                        _id: 0
+                    }
+                },
+                { $sort: { date: 1 } }
+            ]);
+
+            // Lịch hẹn gần đây
+            const recentAppointments = await Appointment.find({
+                doctor: doctorId
+            })
+                .sort({ createdAt: -1 })
+                .limit(5)
+                .select('patient timeSlot status schedule')
+                .populate('patient', 'name')
+                .populate('schedule', 'workDate');
+
+            return {
+                status: 'success',
+                message: 'Lấy thống kê bác sĩ thành công',
+                data: {
+                    overview: {
+                        todayCount,
+                        monthCount,
+                        completeCount,
+                        cancelCount
+                    },
+                    chartData: chartData.map(item => ({
+                        ...item,
+                        date: new Date(item.date).toLocaleDateString('vi-VN')
+                    })),
+                    recentAppointments: recentAppointments.map(ap => ({
+                        patient: ap.patient.name,
+                        time: `${ap.timeSlot} - ${new Date(ap.schedule?.workDate).toLocaleDateString('vi-VN')}`,
+                        status: ap.status
+                    }))
+                }
+            };
+        } catch (error) {
+            return {
+                status: 'error',
+                message: 'Đã xảy ra lỗi khi lấy thống kê bác sĩ: ' + error.message
+            };
+        }
+    };
+
 }
 module.exports = new DoctorService();

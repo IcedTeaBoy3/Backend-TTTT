@@ -14,8 +14,8 @@ app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 // Cors
 app.use(cors(
     {
-        origin: [process.env.CLIENT_URL, 'http://localhost:4000'], // Thêm localhost vào danh sách cho phép, // Địa chỉ frontend
-        credentials: true,
+      origin: [process.env.CLIENT_URL, 'http://localhost:4000'], // Thêm localhost vào danh sách cho phép, // Địa chỉ frontend
+      credentials: true,
     }
 ));
 // Body parser
