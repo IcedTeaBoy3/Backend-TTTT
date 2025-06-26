@@ -94,10 +94,10 @@ class DoctorController {
     }
     getAllDoctors = async (req, res) => { 
         try {
-            const { page, limit,isHospitalNotNull } = req.query;
+            const { page, limit,isHospitalNotNull,specialty,qualification,searchValue} = req.query;
             const pageNumber = parseInt(page) 
             const limitNumber = parseInt(limit)
-            const data = await DoctorService.getAllDoctors({ page: pageNumber, limit: limitNumber,isHospitalNotNull });
+            const data = await DoctorService.getAllDoctors({ page: pageNumber, limit: limitNumber,isHospitalNotNull, specialty,qualification,searchValue });
             res.json(data);
         } catch (error) {
             res.status(500).json({

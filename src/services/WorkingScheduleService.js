@@ -80,7 +80,6 @@ class WorkingScheduleService {
     getWorkingScheduleByDoctor = async (data) => {
         try {
             const { doctorId, status, time } = data;
-            console.log('doctorId status time', doctorId, status, time);
             let filter = {
                 doctor: doctorId,
             };

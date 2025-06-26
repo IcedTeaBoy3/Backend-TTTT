@@ -2,6 +2,7 @@ const Hospital = require('../models/Hospital');
 const {deleteImage} = require('../utils/imageUtils');
 const path = require('path');
 const mongoose = require('mongoose');
+const ObjectId = mongoose.Types.ObjectId;
 class HospitalService {
     createHospital = async (data) => {
         try {
@@ -66,43 +67,107 @@ class HospitalService {
             }
         }
     }
+
     getAllHospitals = async (data) => {
         try {
-            const { pageNumber, limitNumber, type, status } = data;
-            const skip = (pageNumber - 1) * limitNumber;
-            let filter = {};
-            if (type) {
-                filter.type = type;
-            }
+            const { pageNumber, limitNumber, type, status, searchValue, specialty } = data;
+            const page = parseInt(pageNumber) || 1;
+            const limit = parseInt(limitNumber) || 10;
+            const skip = (page - 1) * limit;
+
+            let pipeline = [];
+
+            // Join với bảng Doctor
+            pipeline.push({
+                $lookup: {
+                    from: 'doctors',
+                    localField: 'doctors',
+                    foreignField: '_id',
+                    as: 'doctorDetails'
+                }
+            });
+
+            // Tách riêng filter
+            const matchStage = [];
+
+            if (type) matchStage.push({ type });
             if (status && ['active', 'inactive'].includes(status)) {
-                filter.status = status;
+                matchStage.push({ status });
             }
-            // Đếm tổng bản ghi
-            const total = await Hospital.countDocuments(filter);
-            const hospitals = await Hospital.find(filter)
-            .skip(skip)
-            .limit(limitNumber)
+
+            if (searchValue) {
+                matchStage.push({
+                    $or: [
+                        { name: { $regex: searchValue, $options: 'i' } },
+                        { address: { $regex: searchValue, $options: 'i' } },
+                        { phone: { $regex: searchValue, $options: 'i' } },
+                        { description: { $regex: searchValue, $options: 'i' } }
+                    ]
+                });
+            }
+
+            if (specialty) {
+                matchStage.push({
+                    doctorDetails: {
+                        $elemMatch: {
+                            specialties: new ObjectId(specialty)
+                        }
+                    }
+                });
+            }
+
+            if (matchStage.length > 0) {
+                pipeline.push({ $match: { $and: matchStage } });
+            }
+
+            // Đếm tổng
+            const countPipeline = [...pipeline, { $count: 'total' }];
+            const countResult = await Hospital.aggregate(countPipeline);
+            const total = countResult[0]?.total || 0;
+
+            // Phân trang
+            pipeline.push({ $skip: skip });
+            pipeline.push({ $limit: limit });
+            pipeline.push({
+                $project: {
+                    doctorDetails: 0 // ẩn đi
+                }
+            });
+            // Lấy dữ liệu
+            const hospitals = await Hospital.aggregate(pipeline);
+           // Lấy lại danh sách hospital đã lọc theo id để populate đúng
+            const hospitalIds = hospitals.map(h => h._id);
+
+            const populatedHospitals = await Hospital.find({ _id: { $in: hospitalIds } })
             .populate({
                 path: 'doctors',
-                populate: {
-                    path: 'user', // Nếu muốn populate tiếp từ Doctor -> User
-                    select: 'name email'
+                populate: [
+                {
+                    path: 'user',
+                    select: 'name email phone address image'
+                },
+                {
+                    path: 'specialties',
+                    select: 'name description image'
                 }
-            })
-            .exec();
+                ]
+            });
+
             return {
                 status: 'success',
                 message: 'Lấy danh sách bệnh viện thành công',
-                data: hospitals,
-                total: total
+                data: populatedHospitals,
+                total
             };
         } catch (error) {
             return {
                 status: 'error',
                 message: error.message
-            }
+            };
         }
-    }
+    };
+
+
     updateHospital = async (id, data) => {
         try {
             const {

@@ -151,10 +151,32 @@ class DoctorService {
     }
     getAllDoctors = async (data) => {
         try {
-            const { page, limit,isHospitalNotNull } = data;
+            const { page, limit,isHospitalNotNull,specialty,qualification,searchValue } = data;
             const skip = (page - 1) * limit;
             // Nếu isHospitalNotNull là true, chỉ lấy bác sĩ có bệnh viện
-            const matchCondition = isHospitalNotNull ? { hospital: { $ne: null } } : {};
+            const matchCondition = {};
+            if (searchValue) {
+                const regex = new RegExp(searchValue, 'i'); // Tạo biểu thức chính
+                matchCondition.$or = [
+                    { 'user.name': regex },
+                    { 'user.email': regex },
+                    { 'user.phone': regex },
+                    { 'specialties.name': regex },
+                    { 'hospital.name': regex },
+                    { 'qualification': regex },
+                    { 'position': regex },
+                    { 'description': regex }
+                ];
+            }
+            if (isHospitalNotNull) {
+                matchCondition.hospital = { $ne: null };
+            }
+            if(specialty){
+                matchCondition.specialties = { $in: [specialty] };
+            }
+            if (qualification) {
+                matchCondition.qualification = qualification;
+            }
             const doctors = await Doctor.find(matchCondition)
                 .populate('user', 'name email phone address avatar')
                 .populate('specialties', 'name')

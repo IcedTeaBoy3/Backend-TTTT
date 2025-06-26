@@ -59,10 +59,10 @@ class HospitalController {
     }
     getAllHospitals = async (req, res) => {
         try {
-            const { page, limit, type, status } = req.query;
-            const pageNumber = parseInt(page) || 1;
-            const limitNumber = parseInt(limit) || 10;
-            const data = await HospitalService.getAllHospitals({pageNumber,limitNumber,type,status});
+            const { page, limit, type, status,searchValue,specialty } = req.query;
+            const pageNumber = parseInt(page);
+            const limitNumber = parseInt(limit);
+            const data = await HospitalService.getAllHospitals({pageNumber,limitNumber,type,status,searchValue,specialty});
             res.json(data);
         } catch (error) {
             res.status(500).json({

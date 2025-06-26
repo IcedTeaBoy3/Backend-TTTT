@@ -27,7 +27,6 @@ class WorkingScheduleController {
                     message: 'Vui lòng cung cấp đầy đủ thông tin',
                 });
             }
-            console.log('doctorId workDate startTime endTime shiftDuration', doctorId, workDate, startTime, endTime, shiftDuration);
             const data = await WorkingScheduleService.createWorkingSchedule({
                 doctorId,
                 workDate,
