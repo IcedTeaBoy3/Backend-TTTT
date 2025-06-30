@@ -1,6 +1,7 @@
 const Appointment = require('../models/Appointment'); 
 const Doctor = require('../models/Doctor');
 const User = require('../models/User'); 
+const Specialty = require('../models/Specialty');
 class StaticService {
     getAppointmentStats = async (dateFilter) => {
         try {
@@ -34,74 +35,156 @@ class StaticService {
         }
 
     }
-    getDoctorStats = async (dateFilter) => {
+    getDoctorOverviewStats = async (dateFilter) => {
         try {
             // Giả sử bạn có model Doctor và Appointment để lấy thống kê
             const totalDoctors = await User.countDocuments({
                 role: 'doctor',
             });
-            const stats = await Appointment.aggregate([
-            { $match: dateFilter },
-            {
-                $group: {
-                _id: '$doctor',
-                total: { $sum: 1 },
-                completed: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } }
-                }
-            },
-            { $sort: { total: -1 } },
-            {
-                $lookup: {
-                from: 'doctors',
-                localField: '_id',
-                foreignField: '_id',
-                as: 'doctor'
-                }
-            },
-            { $unwind: '$doctor' },
-            {
-                $lookup: {
-                from: 'users',
-                localField: 'doctor.user',
-                foreignField: '_id',
-                as: 'user'
-                }
-            },
-            { $unwind: '$user' },
-            {
-                $lookup: {
-                    from: 'specialties',
-                    localField: 'doctor.specialty',
-                    foreignField: '_id',
-                    as: 'specialty'
-                }
-            },
-            { $unwind: '$specialty' },
-            {
-                $project: {
-                    doctorId: '$_id',
-                    doctorName: '$user.name',
-                    specialty: '$specialty.name',
-                    totalAppointments: '$total',
-                    completedAppointments: '$completed',
-                    completionRate: {
-                        $round: [{ $multiply: [{ $divide: ['$completed', '$total'] }, 100] }, 2]
+            const aggregateStats = await Appointment.aggregate([
+                { $match: dateFilter },
+                {
+                    $group: {
+                    _id: '$doctor',
+                        totalAppointments: { $sum: 1 },
+                        completedAppointments: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } },
+                        cancelledAppointments: { $sum: { $cond: [{ $eq: ['$status', 'cancelled'] }, 1, 0] } },
                     }
-                }
-            }
-            ]);
+                },
+                {
+                    $addFields: {
+                        completionRate: {
+                            $cond: [
+                                { $gt: ['$totalAppointments', 0] },
+                                { $divide: ['$completedAppointments', '$totalAppointments'] },
+                                0
+                            ]
+                        },
+                        cancellationRate: {
+                            $cond: [
+                                { $gt: ['$totalAppointments', 0] },
+                                { $divide: ['$cancelledAppointments', '$totalAppointments'] },
+                                0
+                            ]
+                        }
+                    },
 
+                },
+                {$sort: { totalAppointments: -1 } },
+                {$limit: 1}
+            ]);
+            const topDoctor = aggregateStats.length > 0 ? aggregateStats[0] : null;
+            const totalAppointments = aggregateStats.reduce((acc, d) => acc + d.totalAppointments, 0);
+            const totalCompleted = aggregateStats.reduce((acc, d) => acc + d.completedAppointments, 0);
+            const totalCancelled = aggregateStats.reduce((acc, d) => acc + d.cancelledAppointments, 0);
+
+            const averageCompletionRate = totalAppointments > 0
+            ? Math.round((totalCompleted / totalAppointments) * 10000) / 100
+            : 0;
+            const averageCancellationRate = totalAppointments > 0
+            ? Math.round((totalCancelled / totalAppointments) * 10000) / 100   
+            : 0;
+
+            let topDoctorInfo = null;
+            if (topDoctor && topDoctor._id) {
+                const doctor = await Doctor.findById(topDoctor._id).populate({
+                    path: 'user',
+                    select: 'name email avatar'
+                }).populate('specialties', 'name');
+
+                topDoctorInfo = {
+                    name: doctor?.user?.name || 'Không rõ',
+                    email: doctor?.user?.email || '',
+                    avatar: doctor?.user?.avatar || '',
+                    specialties: doctor?.specialties?.map(s => s.name) || [],
+                    totalAppointments: topDoctor.totalAppointments,
+                    completionRate: Math.round(topDoctor.completionRate * 10000) / 100,
+                    cancellationRate: Math.round(topDoctor.cancellationRate * 10000) / 100
+                };
+            }
             return {
                 status: 'success',
+                message: 'Thống kê tổng quan bác sĩ thành công',
                 data: {
                     totalDoctors,
-                    stats
+                    totalAppointments,
+                    totalCompleted,
+                    totalCancelled,
+                    averageCompletionRate,
+                    averageCancellationRate,
+                    topDoctor: topDoctorInfo,
+                    
                 }
             }
         } catch (error) {
             return {
                 status: 'error',
                 message: error.message || 'Lỗi khi lấy dữ liệu thống kê bác sĩ.'
+            };
+        }
+    }
+    getDoctorStatsBySpecialty = async (dateFilter) => {
+        try {
+            // B1: Lấy thông tin bác sĩ và chuyên khoa
+            const doctorData = await Doctor.aggregate([
+                { $unwind: '$specialties' }, // Vì 1 bác sĩ có thể có nhiều chuyên khoa
+                {
+                    $group: {
+                        _id: '$specialties',
+                        doctorCount: { $sum: 1 },
+                        doctorIds: { $addToSet: '$_id' }
+                    }
+                }
+            ]);
+            // B2: Lấy thông tin lịch hẹn theo chuyên khoa
+            const appointmentData = await Appointment.aggregate([
+                { $match: dateFilter },
+                {
+                    $group: {
+                        _id: '$specialty',
+                        totalAppointments: { $sum: 1 },
+                        completedAppointments: {
+                            $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] }
+                        }
+                    }
+                }
+            ]);
+            // Map chuyên khoa lại để dễ kết hợp
+            const appointmentMap = {};
+            for (const item of appointmentData) {
+                appointmentMap[item._id?.toString()] = item;
+            }
+
+            // B3: Gộp dữ liệu
+            const result = [];
+            for (const doc of doctorData) {
+                const specId = doc._id?.toString();
+                const appStats = appointmentMap[specId] || { totalAppointments: 0, completedAppointments: 0 };
+                const completionRate =
+                    appStats.totalAppointments > 0
+                    ? Math.round((appStats.completedAppointments / appStats.totalAppointments) * 10000) / 100
+                    : 0;
+
+                const specialty = await Specialty.findById(doc._id).select('name');
+
+                result.push({
+                    specialtyId: doc._id,
+                    specialtyName: specialty?.name || 'Không rõ',
+                    doctorCount: doc.doctorCount,
+                    totalAppointments: appStats.totalAppointments,
+                    completedAppointments: appStats.completedAppointments,
+                    completionRate
+                });
+            }
+            return {
+                status: 'success',
+                message: 'Thống kê bác sĩ theo chuyên khoa thành công.',
+                data: result
+            };
+        } catch (error) {
+            return {
+                status: 'error',
+                message: error.message || 'Lỗi khi lấy dữ liệu thống kê bác sĩ theo chuyên khoa.'
             };
         }
     }
@@ -174,43 +257,24 @@ class StaticService {
     }
     getPatientOverviewStats = async () => {
         try {
-
-            const [
-                totalPatients,
-                patientsByGender,
-                patientsActiveAccounts
-            ] = await Promise.all([
-                // Tổng số bệnh nhân
-                User.countDocuments(
-                    { 
-                        role: 'patient',
-                        isVerified: true
-                    }
-                ),
-                
-                // Phân bổ giới tính
-                User.aggregate([
-                    { $match: { role: 'patient' } }, // Chỉ lấy bệnh nhân
-                    { $group: { _id: '$gender', count: { $sum: 1 } } }
-                ]),
-                
-                // Bệnh nhân đã kích hoạt tài khoản
-                User.countDocuments({ isVerified: true, role: 'patient' }),
+            const [total, verified, male, female, other] = await Promise.all([
+                User.countDocuments({ role: 'patient' }),
+                User.countDocuments({ role: 'patient', isVerified: true }),
+                User.countDocuments({ role: 'patient', gender: 'male' }),
+                User.countDocuments({ role: 'patient', gender: 'female' }),
+                User.countDocuments({ role: 'patient',gender: 'other' }),
             ]);
             return {
                 status: 'success',
+                message: 'Thống kê tổng quan bệnh nhân thành công.',
                 data: {
-                    totalPatients,
-                    genderDistribution: patientsByGender.map((curr) => {
-                        let label = 'Không rõ';
-                        if (curr._id === 'male') label = 'Nam';
-                        else if (curr._id === 'female') label = 'Nữ';
-                        return {
-                            type: label,
-                            value: curr.count
-                        };
-                    }),
-                    patientsActiveAccounts,
+                    totalPatients: total,
+                    verifiedPatients: verified,
+                    unverifiedPatients: total - verified,
+                    malePatients: male,
+                    femalePatients: female,
+                    otherPatients: other,
+                    unknownPatients: total - male - female - other
                 }
             }
         }catch (error) {

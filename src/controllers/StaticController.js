@@ -27,7 +27,7 @@ class StaticController {
             });
         }
     };
-    getDoctorStats = async (req, res) => {
+    getDoctorOverviewStats = async (req, res) => {
         try {
             const { startDate, endDate } = req.query;
             // Tạo filter theo khoảng ngày (nếu có)
@@ -38,20 +38,33 @@ class StaticController {
                     $lte: new Date(endDate)
                 };
             }
-            const data = await StaticService.getDoctorStats(dateFilter);
+            const data = await StaticService.getDoctorOverviewStats(dateFilter);
             res.json(data);
-            if(!startDate || !endDate) {
-                return res.status(400).json({ 
-                    status: 'error',
-                    message: 'Vui lòng cung cấp khoảng thời gian bắt đầu và kết thúc.'
-                });
-            }
-            // Tạo filter theo khoảng ngày (nếu có)
 
         } catch (error) {
             res.status(500).json({ 
                 status: 'error',
                 message: error.message || 'Lỗi khi lấy dữ liệu thống kê bác sĩ.'
+            });
+        }
+    }
+    getDoctorStatsBySpecialty = async (req, res) => {
+        try {
+            const { startDate, endDate } = req.query;
+            // Tạo filter theo khoảng ngày (nếu có)
+            const dateFilter = {};
+            if (startDate && endDate) {
+                dateFilter.createdAt = {
+                    $gte: new Date(startDate),
+                    $lte: new Date(endDate)
+                };
+            }
+            const data = await StaticService.getDoctorStatsBySpecialty(dateFilter);
+            res.json(data);
+        } catch (error) {
+            res.status(500).json({ 
+                status: 'error',
+                message: error.message || 'Lỗi khi lấy dữ liệu thống kê bác sĩ theo chuyên khoa.'
             });
         }
     }
