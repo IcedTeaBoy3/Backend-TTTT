@@ -271,7 +271,7 @@ class AppointmentService {
                     path: 'doctor',
                     select: 'user specialties hospital',
                     populate: [
-                        { path: 'user', select: 'name' },
+                        { path: 'user', select: 'name avatar' },
                         { path: 'hospital', select: 'name address' }
                     ]
                 })
@@ -279,7 +279,7 @@ class AppointmentService {
                 .limit(limit)
                 .populate('patient', 'name')
                 .populate('specialty', 'name description')
-                .populate('hospital', 'name address')
+                .populate('hospital', 'name address thumbnail')
                 .populate('schedule', 'workDate startTime endTime')
                 .sort({ createdAt: -1 })
                 .lean();
