@@ -6,7 +6,7 @@ const Appointment = require('../models/Appointment');
 class DoctorService {
     createDoctor = async (data) => {
         try {
-            const { name, email, password, phone, address, specialties, hospitalId, position, qualification , yearExperience, detailExperience, description} = data;
+            const { name, email, password, phone, address, specialties, hospitalId, position, qualification , yearExperience, description} = data;
             const hashPassword = await bcrypt.hash(password, 10);
             const existingUser = await User.findOne({ email: email });
             if (existingUser) {
@@ -37,7 +37,6 @@ class DoctorService {
                 position,
                 qualification,
                 yearExperience,
-                detailExperience,
                 description
             });
             return {
@@ -62,7 +61,6 @@ class DoctorService {
                 position = '',
                 qualification  = 'Cử nhân',
                 yearExperience = 0,
-                detailExperience = '',
                 description = ''
             } = data;
 
@@ -109,7 +107,6 @@ class DoctorService {
             doctor.position = position;
             doctor.qualification = qualification;
             doctor.yearExperience = yearExperience;
-            doctor.detailExperience = detailExperience;
             doctor.description = description;
 
             await doctor.save();
@@ -253,7 +250,6 @@ class DoctorService {
                 { 'description': { $regex: keyword, $options: 'i' } },
                 { 'qualification': { $regex: keyword, $options: 'i' } },
                 { 'position': { $regex: keyword, $options: 'i' } },
-                { 'experience': { $regex: keyword, $options: 'i' } }
             ];
 
             // Nếu có truyền specialty ID, thêm điều kiện lọc

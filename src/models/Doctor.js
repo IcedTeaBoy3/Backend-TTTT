@@ -8,7 +8,6 @@ const DoctorSchema = new Schema(
     position: { type: String },
     qualification: { type: String, required: true },
     yearExperience: { type: Number},
-    detailExperience: { type: String },
     description: { type: String },
   },
   {
