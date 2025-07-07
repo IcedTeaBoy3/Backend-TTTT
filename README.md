@@ -1,6 +1,6 @@
 # 🧠 Backend-TTTT - Backend API
 Đây là backend API cho dự án Medicare, sử dụng Node.js, Express.js, and MongoDB (Mongoose).
-
+---
 ## 🚀 Tech Stack
 - **Node.js** + **Express.js** – Web server & API
 - **MongoDB** + **Mongoose** – Database
@@ -8,7 +8,7 @@
 - **Multer** – File uploads
 - **Nodemailer** – Email services
 - **Google Auth** – OAuth2 login support
-
+---
 ## 📁 Project Structure
 .
 ├── src/
@@ -23,7 +23,7 @@
 ├── .env # Biến môi trường
 ├── package.json
 └── README.md
-
+---
 ## ⚙️ Environment Variables
 MONGODB_URL=your_mongodb_connection_string
 CLIENT_URL=http://localhost:3000
@@ -38,7 +38,7 @@ MAIL_ACCOUNT=youremail@example.com
 MAIL_PASSWORD=your_email_password
 
 GOOGLE_CLIENT_ID=your_google_client_id
-
+---
 ## ▶️ Start Server
 npm start
 Mặc định server sẽ chạy tại: http://localhost:5000
