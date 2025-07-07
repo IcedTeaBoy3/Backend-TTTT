@@ -1,15 +1,23 @@
-# 🧠 Backend-TTTT - Backend API
-Đây là backend API cho dự án Medicare, sử dụng Node.js, Express.js, and MongoDB (Mongoose).
+# 🧠 Backend-TTTT - Medicare API
+
+Đây là **backend API** cho dự án **Medicare**, được xây dựng bằng **Node.js**, **Express.js**, và **MongoDB (Mongoose)**.  
+Hệ thống hỗ trợ xác thực người dùng, gửi email, đăng nhập Google và tải file lên máy chủ.
+
 ---
+
 ## 🚀 Tech Stack
-- **Node.js** + **Express.js** – Web server & API
-- **MongoDB** + **Mongoose** – Database
-- **JWT** – Authentication
-- **Multer** – File uploads
-- **Nodemailer** – Email services
-- **Google Auth** – OAuth2 login support
+
+- **Node.js** + **Express.js** – Web server & REST API
+- **MongoDB** + **Mongoose** – Cơ sở dữ liệu
+- **JWT** – Xác thực người dùng
+- **Multer** – Upload file
+- **Nodemailer** – Gửi email
+- **Google Auth** – Đăng nhập bằng Google
+
 ---
+
 ## 📁 Project Structure
+
 .
 ├── src/
 │ ├── config/ # Cấu hình kết nối DB
@@ -23,8 +31,9 @@
 ├── .env # Biến môi trường
 ├── package.json
 └── README.md
----
+
 ## ⚙️ Environment Variables
+Tạo file `.env` ở thư mục gốc và thêm các biến sau:
 MONGODB_URL=your_mongodb_connection_string
 CLIENT_URL=http://localhost:3000
 IS_PRODUCTION=false
@@ -38,7 +47,12 @@ MAIL_ACCOUNT=youremail@example.com
 MAIL_PASSWORD=your_email_password
 
 GOOGLE_CLIENT_ID=your_google_client_id
----
-## ▶️ Start Server
+## ▶️ Cài đặt & Khởi động
+### 1. Cài đặt package
+```bash
+npm install
+```
+### 2. Chạy server
+```basg
 npm start
-Mặc định server sẽ chạy tại: http://localhost:5000
+```
